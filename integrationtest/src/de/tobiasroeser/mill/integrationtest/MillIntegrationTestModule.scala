@@ -5,21 +5,42 @@ import java.nio.file.attribute.PosixFilePermission
 import scala.util.Try
 
 import mill._
-import mill.define.{Sources, Task, TaskModule}
+import mill.define.{Command, Sources, Task, TaskModule}
 import mill.scalalib._
 import mill.scalalib.publish._
 
 /**
-  * Run Integration for Mill Plugin.
-  */
+ * Run Integration for Mill Plugin.
+ */
 trait MillIntegrationTestModule extends TaskModule {
+  import MillIntegrationTestModule._
 
+  /** Denotes the command which is called when no target in given on the commandline. */
   def defaultCommandName = "test"
 
   /**
-    * Run the integration tests.
-    */
-  def test() = T.command {
+   * Locations where integration tests are located.
+   * Each integration test is a sub-directory, containing a complete test mill project.
+   */
+  def sources: Sources = T.sources(millSourcePath / 'src)
+
+  /**
+   * The directories each representing a mill test case.
+   * Derived from [[sources]].
+   */
+  def testCases: T[Seq[PathRef]] = T {
+    val tests = sources().flatMap { dir =>
+      os.list(dir.path)
+        .filter(d => d.toIO.isDirectory())
+        .filter(d => (d / "build.sc").toIO.isFile())
+    }
+    tests.map(PathRef(_))
+  }
+
+  /**
+   * Run the integration tests.
+   */
+  def test(): Command[Unit] = T.command {
     val ctx = T.ctx()
     //    cleanTestIvyRepo()
 
@@ -102,17 +123,29 @@ trait MillIntegrationTestModule extends TaskModule {
 
     val (succeeded, failed) = results.partition(_.exitCode == 0)
 
-    println(s"\nSucceeded integration tests: ${succeeded.size}\n${succeeded.mkString("\n", "\n", "")}")
-    println(s"\nFailed integration tests: ${failed.size}\n${failed.mkString("\n", "\n", "")}")
+    println(s"\nSucceeded integration tests: ${succeeded.size}\n${succeeded.mkString("- \n", "- \n", "")}")
+    println(s"\nFailed integration tests: ${failed.size}\n${failed.mkString("- \n", "- \n", "")}")
 
     T.ctx().log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${failed.size} failed")
 
-    if (!failed.isEmpty) throw new AssertionError(s"${failed.size} integration test(s) failed")
+    if (!failed.isEmpty) {
+      throw new AssertionError(s"${failed.size} integration test(s) failed:\n${failed.mkString("- \n", "- \n", "")}")
+    }
 
   }
 
+  /**
+   * The mill version used for executing the test cases.
+   * Used by [[downloadMillTestVersion]] to automatically download.
+   * @return
+   */
   def millTestVersion: T[String]
 
+  /**
+   * Download the mill version as defined by [[millTestVersion]].
+   * Override this, if you need to use a custom built mill version.
+   * @return The [[PathRef]] to the mill executable (must have the executable flag).
+   */
   def downloadMillTestVersion: T[PathRef] = T.persistent {
     val mainVersion = parseVersion(millTestVersion()).get.mkString(".")
     val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion}/${millTestVersion()}"
@@ -131,18 +164,51 @@ trait MillIntegrationTestModule extends TaskModule {
     PathRef(target)
   }
 
+  /**
+   * The targets which are called to test the project.
+   * Defaults to `verify`, which should implement test result validation.
+   */
   def testTargets: T[Seq[String]] = T {
     Seq("verify")
   }
 
-  /** Extract the major, minor and micro version parts of the given version string. */
-  def parseVersion(version: String): Try[Array[Int]] = Try {
-    version
-      .split("[-]", 2)(0)
-      .split("[.]", 4)
-      .take(3)
-      .map(_.toInt)
-  }
+  /**
+   * The plugins used in the integration test.
+   * You should at least add your plugin under test here.
+   * You can also add additional libraries, e.g. those that assist you in the test result validation (e.g. a local test support project).
+   * The defined modules will be published into a temporary ivy repository before the tests are executed.
+   * In your test `build.sc` file, instead of the typical `import $ivy.` line,
+   * you should use `import $exec.plugins` to include all plugins that are defined here.
+   */
+  def pluginsUnderTest: Seq[PublishModule]
+
+  /**
+   * Internal target used to trigger required artifacts of the plugins under test.
+   * You should not need to use or override this in you buildfile.
+   */
+  protected def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
+    Task.traverse(pluginsUnderTest) { plugin =>
+      new Task.Zipped(
+        plugin.jar,
+        new Task.Zipped(
+          plugin.sourceJar,
+          new Task.Zipped(
+            plugin.docJar,
+            new Task.Zipped(
+              plugin.pom,
+              new Task.Zipped(
+                plugin.ivy,
+                plugin.artifactMetadata
+              )
+            )
+          )
+        )
+      )
+    }
+
+}
+
+object MillIntegrationTestModule {
 
   case class TestCase(name: String, exitCode: Int, out: Seq[String], err: Seq[String]) {
     override def toString(): String =
@@ -158,93 +224,13 @@ trait MillIntegrationTestModule extends TaskModule {
 
   }
 
-  //  def testIvyRepo: T[os.Path] = T {
-  //    T.ctx().dest
-  //  }
-  //
-  //  def cleanTestIvyRepo = T.persistent {
-  //    // remove on implicit first access
-  //    T.ctx().log.debug(s"Cleaning test ivy repo at ${testIvyRepo()}")
-  //    os.remove(testIvyRepo())
-  //  }
-
-  def pluginsUnderTest: Seq[PublishModule]
-
-  def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
-    Task.traverse(pluginsUnderTest) { plugin =>
-      new Task.Zipped(
-        plugin.jar,
-        new Task.Zipped(
-          plugin.sourceJar,
-          new Task.Zipped(
-            plugin.docJar,
-            new Task.Zipped(
-              plugin.pom,
-              new Task.Zipped(plugin.ivy, plugin.artifactMetadata)
-            )
-          )
-        )
-      )
-      //        (
-      //          plugin.jar(),
-      //          plugin.sourceJar(),
-      //          plugin.docJar(),
-      //          plugin.pom(),
-      //          plugin.ivy(),
-      //          plugin.artifactMetadata()
-      //        )
-    }
-
-  //  def publishPluginsUnderTest() = T.command {
-  //    T.ctx.log.debug("Publishing plugins under test into test ivy repo")
-  //    val publisher = new LocalIvyPublisher(testIvyRepo())
-  //    pluginUnderTestDetails().foreach { detail =>
-  //      publisher.publish(
-  //        jar = detail._1.path,
-  //        sourcesJar = detail._2._1.path,
-  //        docJar = detail._2._2._1.path,
-  //        pom = detail._2._2._2._1.path,
-  //        ivy = detail._2._2._2._2._1.path,
-  //        artifact = detail._2._2._2._2._2
-  //      )
-  //    }
-  //    //     TODO: actually publish
-  //    //    Task.traverse(pluginsUnderTest) { plugin =>
-  //    //    }
-  //  }
-
-  //
-  //  def publishPluginsUnderTest(plugins: Seq[PublishModule], repoPath: os.Path) = {
-  //    val publisher = new LocalIvyPublisher(repoPath)
-  //    plugins.foreach { plugin =>
-  //      publisher.publish(
-  //        jar = plugin.jar().path,
-  //        sourcesJar = plugin.sourceJar().path,
-  //        docJar = plugin.docJar().path,
-  //        pom = plugin.pom().path,
-  //        ivy = plugin.ivy().path,
-  //        artifact = plugin.artifactMetadata()
-  //      )
-  //    }
-  //  }
-
-  /**
-    * Locations where integration tests are found.
-    * An integration test is a sub-directory, containing a complete mill project.
-    */
-  def sources: Sources = T.sources(millSourcePath / 'src)
-
-  /**
-    * The directories each representing a mill test case.
-    */
-  def testCases: T[Seq[PathRef]] = T {
-    val tests = sources().flatMap { dir =>
-      os.list(dir.path)
-        .filter(d => d.toIO.isDirectory())
-        .filter(d => (d / "build.sc").toIO.isFile())
-    }
-    tests.map(PathRef(_))
+  /** Extract the major, minor and micro version parts of the given version string. */
+  def parseVersion(version: String): Try[Array[Int]] = Try {
+    version
+      .split("[-]", 2)(0)
+      .split("[.]", 4)
+      .take(3)
+      .map(_.toInt)
   }
 
 }
-
