@@ -1,5 +1,5 @@
 = Integration test plugin for mill plugins
-:version: 0.0.1-SNAPSHOT
+:version: 0.1.0
 :exampleMillVersion: 0.3.6
 
 == Quickstart
@@ -107,3 +107,7 @@ The mill-integrationtest plugin provides the following targets.
 This project is published under the https://www.apache.org/licenses/LICENSE-2.0[Apache License, Version 2.0].
 
 == Changelog
+
+=== mill-integrationtest 0.1.0 - 2019-02-21
+
+* Initial public release

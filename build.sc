@@ -1,17 +1,18 @@
 import mill._
 import mill.scalalib._
-import mill.define.Task
+import mill.define.{Sources, Task}
 import mill.scalalib.publish._
 import ammonite.ops._
 
 object integrationtest extends ScalaModule with PublishModule {
+
+  def publishVersion = "0.1.0"
 
   def scalaVersion = "2.12.8"
 
   def millVersion = "0.3.6"
 
   def artifactName = "de.tobiasroeser.mill.integrationtest"
-  def publishVersion = "0.0.1-SNAPSHOT"
 
   def compileIvyDeps = Agg(
     ivy"com.lihaoyi::os-lib:0.2.6",
@@ -38,5 +39,12 @@ object integrationtest extends ScalaModule with PublishModule {
       Developer("lefou", "Tobias Roeser", "https://github.com/lefou")
     )
   )
+
+  override def resources: Sources = T.sources {
+    super.resources() ++ Seq(
+      PathRef(millSourcePath / os.up / "README.adoc"),
+      PathRef(millSourcePath / os.up / "LICENSE")
+    )
+  }
 
 }
