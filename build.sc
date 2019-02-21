@@ -6,7 +6,7 @@ import ammonite.ops._
 
 object integrationtest extends ScalaModule with PublishModule {
 
-  def publishVersion = "0.1.0"
+  def publishVersion = "0.1.1-SNAPSHOT"
 
   def scalaVersion = "2.12.8"
 
