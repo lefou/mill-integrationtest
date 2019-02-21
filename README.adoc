@@ -2,6 +2,8 @@
 :version: 0.1.0
 :exampleMillVersion: 0.3.6
 
+Integration testing for mill plugins.
+
 == Quickstart
 
 We assume, you have a mill plugin named `mill-demo`
