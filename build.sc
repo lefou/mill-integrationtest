@@ -1,21 +1,21 @@
 import mill._
 import mill.scalalib._
-import mill.define.{Sources, Task}
+import mill.define.Sources
 import mill.scalalib.publish._
 import ammonite.ops._
 
 object integrationtest extends ScalaModule with PublishModule {
 
-  def publishVersion = "0.1.1-SNAPSHOT"
+  def publishVersion = "0.1.1"
 
-  def scalaVersion = "2.12.8"
+  def scalaVersion = "2.12.10"
 
-  def millVersion = "0.3.6"
+  def millVersion = "0.5.7"
 
   def artifactName = "de.tobiasroeser.mill.integrationtest"
 
   def compileIvyDeps = Agg(
-    ivy"com.lihaoyi::os-lib:0.2.6",
+    ivy"com.lihaoyi::os-lib:0.6.2",
     ivy"com.lihaoyi::mill-main:${millVersion}",
     ivy"com.lihaoyi::mill-scalalib:${millVersion}"
   )
@@ -23,7 +23,7 @@ object integrationtest extends ScalaModule with PublishModule {
   object test extends Tests {
     def testFrameworks = Seq("org.scalatest.tools.Framework")
     def ivyDeps = Agg(
-      ivy"org.scalatest::scalatest:3.0.4"
+      ivy"org.scalatest::scalatest:3.0.8"
     )
   }
 

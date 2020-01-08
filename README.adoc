@@ -1,6 +1,6 @@
 = Integration test plugin for mill plugins
-:version: 0.1.0
-:exampleMillVersion: 0.3.6
+:version: 0.1.1
+:exampleMillVersion: 0.5.7
 :toc:
 :toc-placement: preamble
 
@@ -19,14 +19,14 @@ object demo extends ScalaModule with PublishModule {
 }
 ----
 
-Add an new test sub-project, e.g. `it`.
+Add an new test sub-project, e.g. `itest`.
 
 [source,scala,subs="verbatim,attributes"]
 ----
 import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:{version}`
 import de.tobiasroeser.mill.integrationtest._
 
-object it extends MillIntegrationTest {
+object itest extends MillIntegrationTest {
 
   def millTestVersion = "{exampleMillVersion}"
 
@@ -42,7 +42,7 @@ Your project should now look similar to this:
 +-- demo/
 |   +-- src/
 |
-+-- it/
++-- itest/
     +-- src/
         +-- 01-first-test/
         |   +-- build.sc
@@ -110,7 +110,27 @@ The mill-integrationtest plugin provides the following targets.
 
 This project is published under the https://www.apache.org/licenses/LICENSE-2.0[Apache License, Version 2.0].
 
+
+== Version Compatibility Matrix
+
+Mill is still in active development, and has no stable API yet.
+Hence, not all mill-integrationtest versions work with every mill version.
+
+The following table shows a matrix of compatible mill and mill-integrationtest versions.
+
+.Version Compatibility Matrix
+[options="header"]
+|===
+| mill-integrationtest | mill
+| 0.1.0 | 0.3.6 - 0.5.3
+| 0.1.1 | 0.5.7
+|===
+
 == Changelog
+
+=== mill-integrationtest 0.1.1 - 2020-01-08
+
+* Version bump mill API to 0.5.7
 
 === mill-integrationtest 0.1.0 - 2019-02-21
 

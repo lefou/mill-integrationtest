@@ -156,7 +156,7 @@ trait MillIntegrationTestModule extends TaskModule {
       T.ctx().log.debug(s"Downloading ${url}")
       val tmpfile = os.temp(dir = T.ctx().dest, deleteOnExit = false)
       os.remove(tmpfile)
-      mill.modules.Util.download(url, tmpfile.last)
+      mill.modules.Util.download(url, os.rel / tmpfile.last)
       os.move(tmpfile, target)
       os.perms.set(target, os.perms(target) + PosixFilePermission.OWNER_EXECUTE)
     }
