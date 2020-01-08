@@ -26,7 +26,7 @@ Add an new test sub-project, e.g. `itest`.
 import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:{version}`
 import de.tobiasroeser.mill.integrationtest._
 
-object itest extends MillIntegrationTest {
+object itest extends MillIntegrationTestModule {
 
   def millTestVersion = "{exampleMillVersion}"
 
