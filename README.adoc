@@ -102,6 +102,11 @@ The mill-integrationtest plugin provides the following targets.
   Override this, if you need to use a custom built mill version.
   Returns the `PathRef` to the mill executable (must have the executable flag).
 
+* `def temporaryIvyModules: Seq[PublishModule]` -
+  Additional modules you need in the temporary ivy repository, but not in the resulting mill build classpath.
+  The defined modules will be published into a temporary ivy repository before the tests are executed.
+
+
 .Commands
 * `def test(): Command[Unit]` -
   Run the integration tests.

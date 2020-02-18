@@ -49,7 +49,7 @@ trait MillIntegrationTestModule extends TaskModule {
 
     T.ctx.log.debug("Publishing plugins under test into test ivy repo")
     val publisher = new LocalIvyPublisher(ivyPath / 'local)
-    pluginUnderTestDetails().foreach { detail =>
+    (pluginUnderTestDetails() ++ temporaryIvyModulesDetails()).foreach { detail =>
       publisher.publish(
         jar = detail._1.path,
         sourcesJar = detail._2._1.path,
@@ -183,11 +183,41 @@ trait MillIntegrationTestModule extends TaskModule {
   def pluginsUnderTest: Seq[PublishModule]
 
   /**
+   * Additional modules you need in the temporary ivy repository, but not in the resulting mill build classpath.
+   * The defined modules will be published into a temporary ivy repository before the tests are executed.
+   */
+  def temporaryIvyModules: Seq[PublishModule] = Seq()
+
+  /**
    * Internal target used to trigger required artifacts of the plugins under test.
    * You should not need to use or override this in you buildfile.
    */
   protected def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
     Task.traverse(pluginsUnderTest) { plugin =>
+      new Task.Zipped(
+        plugin.jar,
+        new Task.Zipped(
+          plugin.sourceJar,
+          new Task.Zipped(
+            plugin.docJar,
+            new Task.Zipped(
+              plugin.pom,
+              new Task.Zipped(
+                plugin.ivy,
+                plugin.artifactMetadata
+              )
+            )
+          )
+        )
+      )
+    }
+
+  /**
+   * Internal target used to trigger required artifacts of the plugins under test.
+   * You should not need to use or override this in you buildfile.
+   */
+  protected def temporaryIvyModulesDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
+    Task.traverse(temporaryIvyModules) { plugin =>
       new Task.Zipped(
         plugin.jar,
         new Task.Zipped(
