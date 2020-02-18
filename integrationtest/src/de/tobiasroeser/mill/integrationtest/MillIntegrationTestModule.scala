@@ -5,6 +5,7 @@ import java.nio.file.attribute.PosixFilePermission
 import scala.util.Try
 
 import mill._
+import mill.api.Ctx
 import mill.define.{Command, Sources, Task, TaskModule}
 import mill.scalalib._
 import mill.scalalib.publish._
@@ -41,13 +42,23 @@ trait MillIntegrationTestModule extends TaskModule {
    * Run the integration tests.
    */
   def test(): Command[Unit] = T.command {
+    testTask()
+  }
+
+  /**
+   * Run the integration tests (same as `test`), but only if any input has changed since the last run.
+   */
+  def testCached: T[Unit] = T{
+    testTask()
+  }
+
+  protected def testTask(): Task[Unit] = T.task {
     val ctx = T.ctx()
-    //    cleanTestIvyRepo()
 
     // publish Local
     val ivyPath = ctx.dest / 'ivyRepo
 
-    T.ctx.log.debug("Publishing plugins under test into test ivy repo")
+    ctx.log.debug("Publishing plugins under test into test ivy repo")
     val publisher = new LocalIvyPublisher(ivyPath / 'local)
     (pluginUnderTestDetails() ++ temporaryIvyModulesDetails()).foreach { detail =>
       publisher.publish(
@@ -60,20 +71,6 @@ trait MillIntegrationTestModule extends TaskModule {
       )
     }
 
-    //    publishPluginsUnderTest()
-    //    publishPluginsUnderTest(pluginsUnderTest, ivyPath)
-
-    //    val publisher = new LocalIvyPublisher(ivyPath)
-    //    pluginsUnderTest.foreach { plugin =>
-    //      publisher.publish(
-    //        jar = plugin.jar().path,
-    //        sourcesJar = plugin.sourceJar().path,
-    //        docJar = plugin.docJar().path,
-    //        pom = plugin.pom().path,
-    //        ivy = plugin.ivy().path,
-    //        artifact = plugin.artifactMetadata()
-    //      )
-    //    }
 
     val artifactMetadata = Task.sequence(pluginsUnderTest.map(_.artifactMetadata))()
 

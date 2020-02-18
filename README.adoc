@@ -107,9 +107,12 @@ The mill-integrationtest plugin provides the following targets.
   The defined modules will be published into a temporary ivy repository before the tests are executed.
 
 
-.Commands
+.Commands / Action Targets
 * `def test(): Command[Unit]` -
   Run the integration tests.
+
+* `def testCached: T[Unit]` -
+  Run the integration tests (same as `test`), but only if any input has changed since the last run.
 
 == License
 
