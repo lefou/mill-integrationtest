@@ -1,6 +1,6 @@
 = Integration test plugin for mill plugins
 :version: 0.2.0
-:exampleMillVersion: 0.5.7
+:exampleMillVersion: 0.6.1
 :toc:
 :toc-placement: preamble
 
