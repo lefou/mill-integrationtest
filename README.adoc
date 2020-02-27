@@ -137,6 +137,16 @@ The following table shows a matrix of compatible mill and mill-integrationtest v
 
 == Changelog
 
+=== master
+
+* Added support to run selective tests  
+* Targets `test` and `testCached` no return the test result
+* new target `testCachedArgs` to control args feeded to testCachedArgs
+* Test executor now generated a mill script which allows you to manually invoke mill in
+  a test destination directory
+* New target `testInvocations` providing much finer control over executed targets and their
+  expected exit value
+
 === mill-integrationtest 0.1.2 - 2020-02-18
 
 * New target `temporaryIvyModulesDetails`
