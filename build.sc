@@ -9,7 +9,7 @@ val baseDir = build.millSourcePath
 
 object integrationtest extends ScalaModule with PublishModule {
 
-  def publishVersion = "0.1.3-SNAPSHOT"
+  def publishVersion = "0.2.0"
 
   def scalaVersion = "2.12.10"
 

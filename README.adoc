@@ -1,8 +1,12 @@
 = Integration test plugin for mill plugins
-:version: 0.1.2
+:version: 0.2.0
 :exampleMillVersion: 0.5.7
 :toc:
 :toc-placement: preamble
+
+ifdef::env-github[]
+image:https://travis-ci.org/lefou/mill-integrationtest.svg?branch=master["Travis CI Build Status", link="https://travis-ci.org/lefou/mill-integrationtest"]
+endif::[]
 
 Integration testing for mill plugins.
 
@@ -130,6 +134,7 @@ The following table shows a matrix of compatible mill and mill-integrationtest v
 [options="header"]
 |===
 | mill-integrationtest | mill
+| 0.2.0 | 0.5.7
 | 0.1.2 | 0.5.7
 | 0.1.1 | 0.5.7
 | 0.1.0 | 0.3.6 - 0.5.3
@@ -139,7 +144,9 @@ The following table shows a matrix of compatible mill and mill-integrationtest v
 
 === master
 
-* Added support to run selective tests  
+=== mill-integrationtest 0.2.0 - 2020-02-27
+
+* Added support to run selective tests
 * Targets `test` and `testCached` no return the test result
 * new target `testCachedArgs` to control args feeded to testCachedArgs
 * Test executor now generated a mill script which allows you to manually invoke mill in
