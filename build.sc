@@ -1,8 +1,11 @@
+import scala.util.matching.Regex
+
 import mill._
-import mill.api.Result
 import mill.scalalib._
 import mill.define.Sources
 import mill.scalalib.publish._
+
+val baseDir = build.millSourcePath
 
 object integrationtest extends ScalaModule with PublishModule {
 
@@ -50,6 +53,7 @@ object integrationtest extends ScalaModule with PublishModule {
 }
 
 object P extends Module {
+  def test() = T.command { integrationtest.test.test()() }
   def testCached = T { integrationtest.test.testCached() }
   def install() = T.command{
     integrationtest.publishLocal()()
@@ -68,5 +72,19 @@ object P extends Module {
       release = release,
       readTimeout = 600000
     )()
+  }
+  /**
+   * Update the millw script.
+   */
+  def millw() = T.command {
+    val target = mill.modules.Util.download("https://raw.githubusercontent.com/lefou/millw/master/millw")
+    val millw = baseDir / "millw"
+//    os.copy.over(target.path, millw)
+    val res = os.proc(
+      "sed", s"""s,\\(^DEFAULT_MILL_VERSION=\\).*$$,\\1${Regex.quoteReplacement(integrationtest.millVersion)},""",
+      target.path.toIO.getAbsolutePath()).call(cwd = baseDir)
+    os.write.over(millw, res.out.text())
+    os.perms.set(millw, os.perms(millw) + java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE)
+    target
   }
 }
