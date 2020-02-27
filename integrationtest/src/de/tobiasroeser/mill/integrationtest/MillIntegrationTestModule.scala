@@ -42,17 +42,22 @@ trait MillIntegrationTestModule extends TaskModule {
    * Run the integration tests.
    */
   def test(args: String*): Command[Seq[TestCase]] = T.command {
-    testTask(args: _*)
+    testTask(T.task{args})
   }
+
+  /**
+   * Args to be used by [[testCached]].
+   */
+  def testCachedArgs: T[Seq[String]] = T{ Seq[String]() }
 
   /**
    * Run the integration tests (same as `test`), but only if any input has changed since the last run.
    */
   def testCached: T[Seq[TestCase]] = T{
-    testTask()
+    testTask(testCachedArgs)()
   }
 
-  protected def testTask(args: String*): Task[Seq[TestCase]] = T.task {
+  protected def testTask(args: Task[Seq[String]]): Task[Seq[TestCase]] = T.task {
     val ctx = T.ctx()
 
     // publish Local
@@ -87,7 +92,7 @@ trait MillIntegrationTestModule extends TaskModule {
     val results: Seq[TestCase] = tests.zipWithIndex.map { case (test, index) =>
       // TODO flush output streams, should we just wait a bit?
       val logLine = s"integration test [${index + 1}/${tests.size}]: ${test.path.last}"
-      if(args.isEmpty || args.exists(_ == test.path.last)) {
+      if(args().isEmpty || args().exists(_ == test.path.last)) {
 
         ctx.log.info(s"Starting ${logLine}")
 
