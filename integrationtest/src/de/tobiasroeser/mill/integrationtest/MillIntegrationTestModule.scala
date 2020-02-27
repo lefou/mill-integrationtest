@@ -6,7 +6,7 @@ import scala.util.Try
 
 import mill._
 import mill.api.{Ctx, Result}
-import mill.define.{Command, Sources, Task, TaskModule}
+import mill.define.{Command, Sources, Target, Task, TaskModule}
 import mill.scalalib._
 import mill.scalalib.publish._
 
@@ -14,6 +14,7 @@ import mill.scalalib.publish._
  * Run Integration for Mill Plugin.
  */
 trait MillIntegrationTestModule extends TaskModule {
+
   import MillIntegrationTestModule._
 
   /** Denotes the command which is called when no target in given on the commandline. */
@@ -42,18 +43,22 @@ trait MillIntegrationTestModule extends TaskModule {
    * Run the integration tests.
    */
   def test(args: String*): Command[Seq[TestCase]] = T.command {
-    testTask(T.task{args})
+    testTask(T.task {
+      args
+    })
   }
 
   /**
    * Args to be used by [[testCached]].
    */
-  def testCachedArgs: T[Seq[String]] = T{ Seq[String]() }
+  def testCachedArgs: T[Seq[String]] = T {
+    Seq[String]()
+  }
 
   /**
    * Run the integration tests (same as `test`), but only if any input has changed since the last run.
    */
-  def testCached: T[Seq[TestCase]] = T{
+  def testCached: T[Seq[TestCase]] = T {
     testTask(testCachedArgs)()
   }
 
@@ -61,7 +66,7 @@ trait MillIntegrationTestModule extends TaskModule {
     val ctx = T.ctx()
 
     // publish Local
-    val ivyPath = ctx.dest / 'ivyRepo
+    val ivyPath = ctx.dest / "ivyRepo"
 
     ctx.log.debug("Publishing plugins under test into test ivy repo")
     val publisher = new LocalIvyPublisher(ivyPath / 'local)
@@ -76,7 +81,6 @@ trait MillIntegrationTestModule extends TaskModule {
       )
     }
 
-
     val artifactMetadata = Task.sequence(pluginsUnderTest.map(_.artifactMetadata))()
 
     val importFileContents = {
@@ -87,68 +91,111 @@ trait MillIntegrationTestModule extends TaskModule {
       header ++ body
     }.mkString("\n")
 
-    val tests = testCases()
+    val testCases = testInvocations()
+    //    val testInvocationsMap: Map[PathRef, TestInvocation.Targets] = testCases.toMap
+    val tests = testCases.map(_._1)
+
     ctx.log.debug(s"Running ${tests.size} integration tests")
-    val results: Seq[TestCase] = tests.zipWithIndex.map { case (test, index) =>
-      // TODO flush output streams, should we just wait a bit?
-      val logLine = s"integration test [${index + 1}/${tests.size}]: ${test.path.last}"
-      if(args().isEmpty || args().exists(_ == test.path.last)) {
+    val results: Seq[TestCase] = tests.zipWithIndex.map {
+      case (test, index) =>
+        // TODO flush output streams, should we just wait a bit?
+        val logLine = s"integration test [${index + 1}/${tests.size}]: ${test.path.last}"
+        if (args().isEmpty || args().exists(_ == test.path.last)) {
 
-        ctx.log.info(s"Starting ${logLine}")
+          ctx.log.info(s"Starting ${logLine}")
 
-        // The test dir
-        val testPath = ctx.dest / test.path.last
+          // per-test preparation
 
-        // start clean
-        os.remove.all(testPath)
+          // The test dir
+          val testPath = ctx.dest / test.path.last
 
-        // copy test project here
-        os.copy(from = test.path, to = testPath, createFolders = true)
+          // start clean
+          os.remove.all(testPath)
 
-        // Write the plugins.sc file
-        os.write(testPath / "plugins.sc", importFileContents)
+          // copy test project here
+          os.copy(from = test.path, to = testPath, createFolders = true)
 
-        val millExe = downloadMillTestVersion().path
+          // Write the plugins.sc file
+          os.write(testPath / "plugins.sc", importFileContents)
 
-        // run mill with test targets
-        // ENV=env mill -i testTargets
-        val result = os.proc(millExe, "-i", testTargets())
-          .call(
-            cwd = testPath,
-            check = false,
-            env = Map(
-              "JAVA_OPTS" -> s"-Divy.home=${ivyPath}"
-            )
+          val millExe = downloadMillTestVersion().path
+
+          // TODO: also create a runner script, which can be ivoked manually
+          os.write(
+            target = testPath / "mill",
+            data =
+              s"""#!/usr/bin/env sh
+                 |export JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
+                 |exec ${millExe.toIO.getAbsolutePath()} -i "$$@"
+                 |""".stripMargin,
+            perms = os.PermSet(0) +
+              PosixFilePermission.OWNER_READ +
+              PosixFilePermission.OWNER_WRITE +
+              PosixFilePermission.OWNER_EXECUTE
           )
 
-        if (result.exitCode == 0) {
-          ctx.log.info(s"Succeeded ${logLine}")
+          var prevFailed: Boolean = false
+
+          val results: Seq[TestInvocationResult] = testCases.toMap.apply(test).map { invocation =>
+            if (prevFailed) TestInvocationResult(invocation, TestResult.Skipped, Seq(), Seq())
+            else {
+              val result = invocation match {
+                case invocation @ TestInvocation.Targets(targets, expectedExitCode) =>
+
+                  // run mill with test targets
+                  // ENV=env mill -i testTargets
+                  val result = os.proc("./mill", targets)
+                    .call(
+                      cwd = testPath,
+                      check = false
+                    )
+
+                  val res = if (result.exitCode == expectedExitCode) {
+                    TestResult.Success
+                  } else {
+                    TestResult.Failed
+                  }
+
+                  TestInvocationResult(invocation, res, result.out.lines, result.err.lines)
+              }
+
+              // abort condition
+              if (result.result == TestResult.Failed) prevFailed = true
+              result
+            }
+          }
+
+          val finalRes = results.foldLeft[TestResult](TestResult.Success) {
+            case (TestResult.Success, TestInvocationResult(_, TestResult.Success, _, _)) => TestResult.Success
+            case (TestResult.Success, TestInvocationResult(_, TestResult.Skipped, _, _)) => TestResult.Success
+            case (TestResult.Skipped, _) => TestResult.Skipped
+            case _ => TestResult.Failed
+          }
+
+          finalRes match {
+            case TestResult.Success => ctx.log.info(s"Succeeded ${logLine}")
+            case TestResult.Skipped => ctx.log.info(s"Skipped ${logLine}")
+            case TestResult.Failed => ctx.log.error(s"Failed ${logLine}")
+          }
+
+          TestCase(testPath.last, finalRes, results)
+
         } else {
-          ctx.log.error(s"Failed ${logLine}")
+          ctx.log.debug(s"Skipping ${logLine}")
+          TestCase(test.path.last, TestResult.Skipped, Seq())
         }
-        TestCase(testPath.last, result.exitCode, result.out.lines, result.err.lines, skipped = false)
-      }
-      else {
-        ctx.log.debug(s"Skipping ${logLine}")
-        TestCase(test.path.last, -1, Seq(), Seq(), skipped = true)
-      }
     }
 
-    val categorized = results.groupBy { r =>
-      if (r.skipped) "skipped"
-      else if (r.exitCode == 0) "success"
-      else "failed"
-    }
-    val succeeded = categorized.getOrElse("success", Seq())
-    val skipped = categorized.getOrElse("skipped", Seq())
-    val failed = categorized.getOrElse("failed", Seq())
+    val categorized = results.groupBy(_.result)
+    val succeeded = categorized.getOrElse(TestResult.Success, Seq())
+    val skipped = categorized.getOrElse(TestResult.Skipped, Seq())
+    val failed = categorized.getOrElse(TestResult.Failed, Seq())
 
     ctx.log.debug(s"\nSucceeded integration tests: ${succeeded.size}\n${succeeded.mkString("- \n", "- \n", "")}")
     ctx.log.debug(s"\nSkipped integration tests: ${skipped.size}\n${skipped.mkString("- \n", "- \n", "")}")
     ctx.log.debug(s"\nFailed integration tests: ${failed.size}\n${failed.mkString("- \n", "- \n", "")}")
 
     ctx.log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed")
-
 
     if (!failed.isEmpty) {
       Result.Failure(s"${failed.size} integration test(s) failed:\n${failed.mkString("- \n", "- \n", "")}", Some(results))
@@ -161,6 +208,7 @@ trait MillIntegrationTestModule extends TaskModule {
   /**
    * The mill version used for executing the test cases.
    * Used by [[downloadMillTestVersion]] to automatically download.
+   *
    * @return
    */
   def millTestVersion: T[String]
@@ -168,14 +216,23 @@ trait MillIntegrationTestModule extends TaskModule {
   /**
    * Download the mill version as defined by [[millTestVersion]].
    * Override this, if you need to use a custom built mill version.
+   *
    * @return The [[PathRef]] to the mill executable (must have the executable flag).
    */
   def downloadMillTestVersion: T[PathRef] = T.persistent {
-    val mainVersion = parseVersion(millTestVersion()).get.mkString(".")
-    val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion}/${millTestVersion()}"
+    val mainVersion = parseVersion(millTestVersion()).get
+    val suffix = mainVersion match {
+      case Array(0, 0, _) => ""
+      case Array(0, 1, _) => ""
+      case Array(0, 2, _) => ""
+      case Array(0, 3, _) => ""
+      case Array(0, 4, _) => ""
+      case _ => "-assembly"
+    }
+    val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.mkString(".")}/${millTestVersion()}${suffix}"
 
     // we avoid a download, if the previous download was successful
-    val target = T.ctx().dest / s"mill-${millTestVersion()}.jar"
+    val target = T.ctx().dest / s"mill-${millTestVersion()}${suffix}.jar"
     if (!os.exists(target)) {
       T.ctx().log.debug(s"Downloading ${url}")
       val tmpfile = os.temp(dir = T.ctx().dest, deleteOnExit = false)
@@ -191,9 +248,19 @@ trait MillIntegrationTestModule extends TaskModule {
   /**
    * The targets which are called to test the project.
    * Defaults to `verify`, which should implement test result validation.
+   * This target is now deprecated in favor to [[testInvocations]], which is more flexible.
    */
+  @deprecated("Use testInvocations instead", "mill-integrationtest-0.1.3-SNAPSHOT")
   def testTargets: T[Seq[String]] = T {
     Seq("verify")
+  }
+
+  /**
+   * The test invocations to test the project.
+   * Defaults to run `TestInvokation.Targets` with the targets from [[testTargets]] and expecting successful execution.
+   */
+  def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
+    testCases().map(tc => tc -> Seq(TestInvocation.Targets(testTargets())))
   }
 
   /**
@@ -263,24 +330,6 @@ trait MillIntegrationTestModule extends TaskModule {
 }
 
 object MillIntegrationTestModule {
-
-  case class TestCase(name: String, exitCode: Int, out: Seq[String], err: Seq[String], skipped: Boolean = false) {
-    override def toString(): String =
-      s"Test case: ${
-        name
-      }\nExit code: ${
-        exitCode
-      }\n\n[out]\n\n${
-        out.mkString("\n")
-      }\n\n[err]\n\n${
-        err.mkString("\n")
-      }"
-
-  }
-
-  object TestCase {
-    implicit def rw: upickle.default.ReadWriter[TestCase] = upickle.default.macroRW
-  }
 
   /** Extract the major, minor and micro version parts of the given version string. */
   def parseVersion(version: String): Try[Array[Int]] = Try {
