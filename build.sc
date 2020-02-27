@@ -1,8 +1,8 @@
 import mill._
+import mill.api.Result
 import mill.scalalib._
 import mill.define.Sources
 import mill.scalalib.publish._
-import ammonite.ops._
 
 object integrationtest extends ScalaModule with PublishModule {
 
@@ -47,4 +47,26 @@ object integrationtest extends ScalaModule with PublishModule {
     )
   }
 
+}
+
+object P extends Module {
+  def testCached = T { integrationtest.test.testCached() }
+  def install = T{
+    integrationtest.publishLocal()
+    println(s"Published as: ${integrationtest.publishVersion()}")
+  }
+  def checkRelease: T[Unit] = T{
+    if(integrationtest.publishVersion().contains("SNAPSHOT")) sys.error("Cannot release a SNAPSHOT version")
+    else {
+      testCached()
+    }
+  }
+  def release(sonatypeCreds: String, release: Boolean = true) = T.command {
+    checkRelease()
+    integrationtest.publish(
+      sonatypeCreds = sonatypeCreds,
+      release = release,
+      readTimeout = 600000
+    )()
+  }
 }
