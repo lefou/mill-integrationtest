@@ -10,8 +10,7 @@ val rtMillVersion = build.version
 
 object integrationtest extends ScalaModule with PublishModule {
 
-  def publishVersion = "0.2.0"
-
+  def publishVersion = "0.2.1"
   def scalaVersion = "2.12.10"
   def millVersion = "0.6.0"
   def artifactName = "de.tobiasroeser.mill.integrationtest"
@@ -48,7 +47,6 @@ object integrationtest extends ScalaModule with PublishModule {
       PathRef(millSourcePath / os.up / "LICENSE")
     )
   }
-
 }
 
 object P extends Module {
