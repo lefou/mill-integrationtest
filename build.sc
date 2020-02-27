@@ -51,8 +51,8 @@ object integrationtest extends ScalaModule with PublishModule {
 
 object P extends Module {
   def testCached = T { integrationtest.test.testCached() }
-  def install = T{
-    integrationtest.publishLocal()
+  def install() = T.command{
+    integrationtest.publishLocal()()
     println(s"Published as: ${integrationtest.publishVersion()}")
   }
   def checkRelease: T[Unit] = T{
