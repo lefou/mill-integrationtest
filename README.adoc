@@ -144,6 +144,8 @@ The following table shows a matrix of compatible mill and mill-integrationtest v
 
 === master
 
+* Bumped Mill API to 0.6.0
+
 === mill-integrationtest 0.2.0 - 2020-02-27
 
 * Added support to run selective tests

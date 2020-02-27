@@ -6,19 +6,18 @@ import mill.define.Sources
 import mill.scalalib.publish._
 
 val baseDir = build.millSourcePath
+val rtMillVersion = build.version
 
 object integrationtest extends ScalaModule with PublishModule {
 
   def publishVersion = "0.2.0"
 
   def scalaVersion = "2.12.10"
-
-  def millVersion = "0.5.7"
-
+  def millVersion = "0.6.0"
   def artifactName = "de.tobiasroeser.mill.integrationtest"
 
   def compileIvyDeps = Agg(
-    ivy"com.lihaoyi::os-lib:0.6.2",
+    ivy"com.lihaoyi::os-lib:0.6.3",
     ivy"com.lihaoyi::mill-main:${millVersion}",
     ivy"com.lihaoyi::mill-scalalib:${millVersion}"
   )
@@ -79,9 +78,8 @@ object P extends Module {
   def millw() = T.command {
     val target = mill.modules.Util.download("https://raw.githubusercontent.com/lefou/millw/master/millw")
     val millw = baseDir / "millw"
-//    os.copy.over(target.path, millw)
     val res = os.proc(
-      "sed", s"""s,\\(^DEFAULT_MILL_VERSION=\\).*$$,\\1${Regex.quoteReplacement(integrationtest.millVersion)},""",
+      "sed", s"""s,\\(^DEFAULT_MILL_VERSION=\\).*$$,\\1${Regex.quoteReplacement(rtMillVersion())},""",
       target.path.toIO.getAbsolutePath()).call(cwd = baseDir)
     os.write.over(millw, res.out.text())
     os.perms.set(millw, os.perms(millw) + java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE)
