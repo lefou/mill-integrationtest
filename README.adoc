@@ -57,7 +57,8 @@ Your project should now look similar to this:
 ----
 
 As the buildfiles `build.sc` in your test cases typically want to access the locally built plugin(s),
-the plugins publishes all plugins referenced under `pluginsUnderTest` to a temporary ivy repository, just before the test is executed.
+the plugins publishes all modules referenced under `pluginsUnderTest` and `temporaryIvyModule` to a temporary ivy repository,
+just before the test is executed.
 The mill version used in the integration test then uses that temporary ivy repository.
 
 Instead of referring to your plugin with `import $ivy.'your::plugin:version'`,
@@ -69,8 +70,16 @@ you can use the following line instead, which ensures you will use the correct l
 import $exec.plugins
 ----
 
-Effectively, at execution time, this line gets replaced by the content of `plugins.sc`, a file which was generated just before the test started to execute.
-It will `$ivy` import all dependencies you gave via `pluginsUnderTest`.
+Effectively, at execution time, this line gets replaced by the content of `plugins.sc`,
+a file which was generated just before the test started to execute.
+It will `$ivy` import all dependencies you listed in `pluginsUnderTest`.
+
+.Example for a generated `plugins.sc`
+[source,scala]
+----
+// Import a locally published version of the plugin under test
+import $ivy.`org.example:mill-demo_2.12:0.1.0-SNAPSHOT`
+----
 
 == Configuration and Targets
 
