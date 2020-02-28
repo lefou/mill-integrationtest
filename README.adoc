@@ -206,7 +206,7 @@ def itest extends MillIntegrationTestModule {
 
 === Test with multiple mill versions, e.g. on a CI server
 
-Mill hasn't a stable API (yet) and there are binary compatibility guarantees.
+Mill hasn't a stable API (yet) and there are no binary compatibility guarantees.
 So, it is a good idea to add all supported mill version to your CI setup.
 
 As a best practice, you can use the value of a `TEST_MILL_VERSION` system environment variable, if defined.
