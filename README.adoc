@@ -83,7 +83,7 @@ import $ivy.`org.example:mill-demo_2.12:0.1.0-SNAPSHOT`
 
 == Configuration and Targets
 
-The mill-integrationtest plugin provides the following targets.
+The `MillIntegrationTestModule` trait provides the following targets:
 
 .Mandatory configuration
 * `def millTestVersion: T[String]`
