@@ -257,7 +257,7 @@ trait MillIntegrationTestModule extends TaskModule {
 
   /**
    * The test invocations to test the project.
-   * Defaults to run `TestInvokation.Targets` with the targets from [[testTargets]] and expecting successful execution.
+   * Defaults to run `TestIncokation.Targets` with the targets from [[testTargets]] and expecting successful execution.
    */
   def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
     testCases().map(tc => tc -> Seq(TestInvocation.Targets(testTargets())))
@@ -276,6 +276,7 @@ trait MillIntegrationTestModule extends TaskModule {
   /**
    * Additional modules you need in the temporary ivy repository, but not in the resulting mill build classpath.
    * The defined modules will be published into a temporary ivy repository before the tests are executed.
+   * This is almost the same as [[pluginsUnderTest]], but does not end up in the generated `plugins.sc`.
    */
   def temporaryIvyModules: Seq[PublishModule] = Seq()
 

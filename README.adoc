@@ -58,7 +58,7 @@ Your project should now look similar to this:
 
 As the buildfiles `build.sc` in your test cases typically want to access the locally built plugin(s),
 the plugins publishes all plugins referenced under `pluginsUnderTest` to a temporary ivy repository, just before the test is executed.
-The mill version used in the integration test then used that temporary ivy repository.
+The mill version used in the integration test then uses that temporary ivy repository.
 
 Instead of referring to your plugin with `import $ivy.'your::plugin:version'`,
 you can use the following line instead, which ensures you will use the correct locally build plugins.
@@ -70,6 +70,7 @@ import $exec.plugins
 ----
 
 Effectively, at execution time, this line gets replaced by the content of `plugins.sc`, a file which was generated just before the test started to execute.
+It will `$ivy` import all dependencies you gave via `pluginsUnderTest`.
 
 == Configuration and Targets
 
@@ -89,15 +90,26 @@ The mill-integrationtest plugin provides the following targets.
   you should use `import $exec.plugins` to include all plugins that are defined here.
 
 .Optional configuration
+* `def temporaryIvyModules: Seq[PublishModule]` -
+  Additional modules you need in the temporary ivy repository, but not in the resulting mill build classpath.
+  The defined modules will be published into a temporary ivy repository before the tests are executed.
+  This is almost the same as `pluginsUnderTest`, but does not end up in the generated `plugins.sc`.
+
 * `def sources: Sources` -
   Locations where integration tests are located.
   Each integration test is a sub-directory, containing a complete test mill project.
 
-* `def testCases: T[Seq[PathRef]]` -
+* `def testCases: Target[Seq[PathRef]]` -
   The directories each representing a mill test case.
   Derived from `sources`.
 
-* `def testTargets: T[Seq[String]]` -
+* `def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]]` -
+  The test invocations to test the project.
+  Defaults to run `TestInvokation.Targets` with the targets from [[testTargets]] and expecting successful execution.
+  For each test case, you can define a seq of invocations.
+
+* `def testTargets: Target[Seq[String]]` -
+  _Deprecated: Please use `testInvocations` instead_
   The targets which are called to test the project.
   Defaults to `verify`, which should implement test result validation.
 
@@ -106,17 +118,113 @@ The mill-integrationtest plugin provides the following targets.
   Override this, if you need to use a custom built mill version.
   Returns the `PathRef` to the mill executable (must have the executable flag).
 
-* `def temporaryIvyModules: Seq[PublishModule]` -
-  Additional modules you need in the temporary ivy repository, but not in the resulting mill build classpath.
-  The defined modules will be published into a temporary ivy repository before the tests are executed.
-
-
 .Commands / Action Targets
-* `def test(): Command[Unit]` -
+* `def test(): Command[Seq[TestCase]]` -
   Run the integration tests.
 
-* `def testCached: T[Unit]` -
+* `def testCached: Target[Seq[TestCase]]` -
   Run the integration tests (same as `test`), but only if any input has changed since the last run.
+
+=== How can I
+
+==== Run multiple targets in on go
+
+Use `testInvocations` to configure the targets to execute.
+[source,scala]
+----
+def testInvocations = T{
+  Seq(
+    pathRefToTest1 -> Seq(
+      TestInvocation.Targets(Seq("target1", "target2"))
+    )
+  )
+}
+----
+
+==== Run multiple mill invocations with different or even the same targets
+
+Use `testInvocations` to configure the targets to execute.
+[source,scala]
+----
+def testInvocations = T{
+  Seq(
+    pathRefToTest1 -> Seq(
+      // first mill run
+      TestInvocation.Targets(Seq("target1", "target2")),
+      // second mill run
+      TestInvocation.Targets(Seq("target3", "target4")),
+      // third mill run with same targets
+      TestInvocation.Targets(Seq("target3", "target4"))
+    )
+  )
+}
+----
+
+==== Test failing mill targets
+
+Use `testInvocations` to configure the targets to execute and fail.
+[source,scala]
+----
+def testInvocations = T{
+  Seq(
+    pathRefToTest1 -> Seq(
+      // first 2 targets that should succeed
+      TestInvocation.Targets(Seq("target1", "target2")),
+      // third target should fail with exit code 1
+      TestInvocation.Targets(Seq("target3"), expectedExitCode = 1)
+    )
+  )
+}
+----
+
+
+==== Properly test a mill plugin that uses a worker implementation
+
+You probably want to load the worker in a separated classloader,
+hence it should not end up in mills classpath.
+Define the plugin module with `pluginsUnderTest` and the worker module with `temporaryIvyModules`.
+This will ensure that all modules will be build and published to the test ivy repository,
+but only those listed in `pluginsUnderTest` will end up in the generated `plugins.sc`.
+
+[source,scala]
+----
+def itest extends MillIntegrationTestModule {
+  def pluginsUnderTest = Seq(plugin)
+  def temporaryIvyModules = Seq(api, worker)
+  // ...
+}
+----
+
+==== Test with multiple mill versions, e.g. on a CI server
+
+Mill hasn't a stable API (yet) and there are binary compatibility guarantees.
+So, it is a good idea to add all supported mill version to your CI setup.
+
+As a best practice, you can use the value of a `TEST_MILL_VERSION` system environment variable, if defined.
+
+[source,scala]
+----
+object itest extends MillIntegrationTestModule {
+  def millTestVersion = T {
+    T.ctx().env.get("TEST_MILL_VERSION").filterNot(_.isEmpty).getOrElse(defaultMillVersion)
+  }
+  ..
+}
+----
+
+To test with mill 0.6.0, run `TEST_MILL_VERSION=0.6.0 mill itest.test`.
+
+If you use Travis-CI, a `.travis.yml` might look like this:
+
+[source,yaml]
+----
+env:
+  - TEST_MILL_VERSION=0.6.0
+  - TEST_MILL_VERSION=0.6.1
+
+script:
+  - mill -i itest.test
+----
 
 == License
 
