@@ -134,9 +134,9 @@ The mill-integrationtest plugin provides the following targets.
 * `def testCached: Target[Seq[TestCase]]` -
   Run the integration tests (same as `test`), but only if any input has changed since the last run.
 
-=== How can I
+== How can I ...
 
-==== Run multiple targets in on go
+=== Run multiple targets in on go
 
 Use `testInvocations` to configure the targets to execute.
 [source,scala]
@@ -150,7 +150,7 @@ def testInvocations = T{
 }
 ----
 
-==== Run multiple mill invocations with different or even the same targets
+=== Run multiple mill invocations with different or even the same targets
 
 Use `testInvocations` to configure the targets to execute.
 [source,scala]
@@ -169,7 +169,7 @@ def testInvocations = T{
 }
 ----
 
-==== Test failing mill targets
+=== Test failing mill targets
 
 Use `testInvocations` to configure the targets to execute and fail.
 [source,scala]
@@ -187,7 +187,7 @@ def testInvocations = T{
 ----
 
 
-==== Properly test a mill plugin that uses a worker implementation
+=== Properly test a mill plugin that uses a worker implementation
 
 You probably want to load the worker in a separated classloader,
 hence it should not end up in mills classpath.
@@ -204,7 +204,7 @@ def itest extends MillIntegrationTestModule {
 }
 ----
 
-==== Test with multiple mill versions, e.g. on a CI server
+=== Test with multiple mill versions, e.g. on a CI server
 
 Mill hasn't a stable API (yet) and there are binary compatibility guarantees.
 So, it is a good idea to add all supported mill version to your CI setup.
