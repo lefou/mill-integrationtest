@@ -136,7 +136,7 @@ The mill-integrationtest plugin provides the following targets.
 
 == How can I ...
 
-=== Run multiple targets in on go
+=== Run multiple targets in one go
 
 Use `testInvocations` to configure the targets to execute.
 [source,scala]
