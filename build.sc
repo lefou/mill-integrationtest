@@ -12,23 +12,23 @@ object integrationtest extends ScalaModule with PublishModule {
 
   def publishVersion = "0.2.1"
   def scalaVersion = "2.12.10"
-  def millVersion = "0.6.0"
-  def artifactName = "de.tobiasroeser.mill.integrationtest"
+  def millVersion = "0.6.2"
+  override def artifactName = "de.tobiasroeser.mill.integrationtest"
 
-  def compileIvyDeps = Agg(
+  override def compileIvyDeps = Agg(
     ivy"com.lihaoyi::os-lib:0.6.3",
     ivy"com.lihaoyi::mill-main:${millVersion}",
     ivy"com.lihaoyi::mill-scalalib:${millVersion}"
   )
 
   object test extends Tests {
-    def testFrameworks = Seq("org.scalatest.tools.Framework")
-    def ivyDeps = Agg(
+    override def testFrameworks = Seq("org.scalatest.tools.Framework")
+    override def ivyDeps = Agg(
       ivy"org.scalatest::scalatest:3.0.8"
     )
   }
 
-  def javacOptions = Seq("-source", "1.8", "-target", "1.8")
+  override def javacOptions = Seq("-source", "1.8", "-target", "1.8")
 
   override def pomSettings = PomSettings(
     description = "A integration test module useful for mill module development",

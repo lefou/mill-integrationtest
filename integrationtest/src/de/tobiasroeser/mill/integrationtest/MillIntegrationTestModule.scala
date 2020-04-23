@@ -77,11 +77,12 @@ trait MillIntegrationTestModule extends TaskModule {
         docJar = detail._2._2._1.path,
         pom = detail._2._2._2._1.path,
         ivy = detail._2._2._2._2._1.path,
-        artifact = detail._2._2._2._2._2
+        artifact = detail._2._2._2._2._2,
+        extras = Seq()
       )
     }
 
-    val artifactMetadata = Task.sequence(pluginsUnderTest.map(_.artifactMetadata))()
+    val artifactMetadata = Target.sequence(pluginsUnderTest.map(_.artifactMetadata))()
 
     val importFileContents = {
       val header = Seq("// Import a locally published version of the plugin under test")
