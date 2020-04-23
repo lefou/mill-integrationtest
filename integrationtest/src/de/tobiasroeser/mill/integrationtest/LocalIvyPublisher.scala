@@ -3,6 +3,7 @@ package de.tobiasroeser.mill.integrationtest
 import mill.api.Ctx
 import mill.scalalib.publish.Artifact
 
+// TODO: remove this in favoor of mill 0.6.2's LocalIvyPublisher
 class LocalIvyPublisher(localIvyRepo: os.Path = os.home / ".ivy2" / "local") {
 
   def publish(
