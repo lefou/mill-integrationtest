@@ -121,14 +121,24 @@ trait MillIntegrationTestModule extends TaskModule {
 
           val millExe = downloadMillTestVersion().path
 
-          // TODO: also create a runner script, which can be ivoked manually
-          os.write(
-            target = testPath / "mill",
-            data =
+          // also create a runner script, which can be ivoked manually
+          val (runScript, scriptBody) =
+            if(scala.util.Properties.isWin) (
+              testPath / "mill.bat",
+              s"""set JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
+                 |"${millExe.toIO.getAbsolutePath()}" -i %*
+                 |""".stripMargin
+            ) else (
+              testPath / "mill",
               s"""#!/usr/bin/env sh
                  |export JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
                  |exec ${millExe.toIO.getAbsolutePath()} -i "$$@"
-                 |""".stripMargin,
+                 |""".stripMargin
+            )
+
+          os.write(
+            target = runScript,
+            data = scriptBody,
             perms = os.PermSet(0) +
               PosixFilePermission.OWNER_READ +
               PosixFilePermission.OWNER_WRITE +
@@ -145,7 +155,7 @@ trait MillIntegrationTestModule extends TaskModule {
 
                   // run mill with test targets
                   // ENV=env mill -i testTargets
-                  val result = os.proc("./mill", targets)
+                  val result = os.proc(runScript, targets)
                     .call(
                       cwd = testPath,
                       check = false
