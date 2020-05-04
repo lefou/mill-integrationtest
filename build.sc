@@ -10,7 +10,7 @@ val rtMillVersion = build.version
 
 object integrationtest extends ScalaModule with PublishModule {
 
-  def publishVersion = "0.2.1"
+  def publishVersion = "0.2.2-SNAPSHOT"
   def scalaVersion = "2.12.10"
   def millVersion = "0.6.2"
   override def artifactName = "de.tobiasroeser.mill.integrationtest"

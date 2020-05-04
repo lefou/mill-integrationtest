@@ -31,7 +31,7 @@ trait MillIntegrationTestModule extends TaskModule {
    * Derived from [[sources]].
    */
   def testCases: T[Seq[PathRef]] = T {
-    val tests = sources().flatMap { dir =>
+    val tests = sources().filter(d => os.exists(d.path)).flatMap { dir =>
       os.list(dir.path)
         .filter(d => d.toIO.isDirectory())
         .filter(d => (d / "build.sc").toIO.isFile())
