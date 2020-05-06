@@ -1,18 +1,25 @@
 import scala.util.matching.Regex
-
 import mill._
 import mill.scalalib._
-import mill.define.Sources
+import mill.define.{Sources, Task}
 import mill.scalalib.publish._
+import os.Path
 
 val baseDir = build.millSourcePath
 val rtMillVersion = build.version
+val integrationtestVersion = "0.2.2-SNAPSHOT"
 
-object integrationtest extends ScalaModule with PublishModule {
+val crossCases = Seq(
+  "0.6.2" -> "2.12.11",
+  "0.6.2-20-08228b" -> "2.13.2"
+)
 
-  def publishVersion = "0.2.2-SNAPSHOT"
-  def scalaVersion = "2.12.10"
-  def millVersion = "0.6.2"
+object integrationtest extends Cross[IntegrationtestCross](crossCases: _*)
+class IntegrationtestCross(millVersion: String, crossScalaVersion: String) extends ScalaModule with PublishModule {
+  // correct the two cross-levels
+  override def millSourcePath: Path = super.millSourcePath / os.up / os.up
+  def publishVersion = integrationtestVersion
+  def scalaVersion = crossScalaVersion
   override def artifactName = "de.tobiasroeser.mill.integrationtest"
 
   override def compileIvyDeps = Agg(
@@ -50,25 +57,31 @@ object integrationtest extends ScalaModule with PublishModule {
 }
 
 object P extends Module {
-  def test() = T.command { integrationtest.test.test()() }
-  def testCached = T { integrationtest.test.testCached() }
+
   def install() = T.command{
-    integrationtest.publishLocal()()
-    println(s"Published as: ${integrationtest.publishVersion()}")
+    T.traverse(crossCases){case (mv,sv) => integrationtest(mv, sv).publishLocal()}()
+//    integrationtest.publishLocal()()
+    println(s"Published as: ${integrationtestVersion}")
   }
-  def checkRelease: T[Unit] = T{
-    if(integrationtest.publishVersion().contains("SNAPSHOT")) sys.error("Cannot release a SNAPSHOT version")
+
+  def checkRelease: T[Unit] = T.input {
+    if(integrationtestVersion.contains("SNAPSHOT")) sys.error("Cannot release a SNAPSHOT version")
     else {
-      testCached()
+      T.traverse(crossCases){case (mv,sv) => integrationtest(mv, sv).test.testCached}()
+      ()
     }
   }
+
   def release(sonatypeCreds: String, release: Boolean = true) = T.command {
     checkRelease()
-    integrationtest.publish(
-      sonatypeCreds = sonatypeCreds,
-      release = release,
-      readTimeout = 600000
-    )()
+    T.traverse(crossCases){case (mv,sv) =>
+      integrationtest(mv, sv).publish(
+        sonatypeCreds = sonatypeCreds,
+        release = release,
+        readTimeout = 600000
+      )
+    }()
+    ()
   }
   /**
    * Update the millw script.
