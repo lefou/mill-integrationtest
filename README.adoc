@@ -31,11 +31,8 @@ import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:{version}`
 import de.tobiasroeser.mill.integrationtest._
 
 object itest extends MillIntegrationTestModule {
-
   def millTestVersion = "{exampleMillVersion}"
-
   def pluginsUnderTest = Seq(demo)
-
 }
 ----
 
@@ -133,6 +130,19 @@ The `MillIntegrationTestModule` trait provides the following targets:
 
 * `def testCached: Target[Seq[TestCase]]` -
   Run the integration tests (same as `test`), but only if any input has changed since the last run.
+
+== Cross Scala-Version testing
+
+This plugin provides a `CrossMillIntegrationTestModule` template, which can be used with `Cross` to test plugins across
+different versions of Scala.
+[source,scala]
+----
+object itest extends Cross[IntegrationTestModule]("2.13.2", "2.12.11")
+class IntegrationTestModule(val crossScalaVersion: String) extends CrossMillIntegrationTestModule {
+  def millTestVersion  = if (crossScalaVersion.startsWith("2.13")) "0.6.2-35-7d1144" else "{exampleMillVersion}"
+  def pluginsUnderTest = Seq(demo(crossScalaVersion))
+}
+----
 
 == How can I ...
 
