@@ -6,4 +6,4 @@ jdk:
   - openjdk11
 
 script:
-  - ./millw P.test
+  - ./millw -i -j 0 __.testCached
