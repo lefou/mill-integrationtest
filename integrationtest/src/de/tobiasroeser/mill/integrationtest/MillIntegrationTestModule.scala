@@ -31,12 +31,11 @@ trait MillIntegrationTestModule extends TaskModule {
    * Derived from [[sources]].
    */
   def testCases: T[Seq[PathRef]] = T {
-    val tests = sources().filter(d => os.exists(d.path)).flatMap { dir =>
-      os.list(dir.path)
-        .filter(d => d.toIO.isDirectory())
-        .filter(d => (d / "build.sc").toIO.isFile())
-    }
-    tests.map(PathRef(_))
+    for {
+      src <- sources() if src.path.toIO.isDirectory
+      d <- os.list(src.path)
+      if (d / "build.sc").toIO.isFile
+    } yield PathRef(d)
   }
 
   /**
