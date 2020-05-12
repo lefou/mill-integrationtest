@@ -100,7 +100,7 @@ trait MillIntegrationTestModule extends TaskModule {
       case (test, index) =>
         // TODO flush output streams, should we just wait a bit?
         val logLine = s"integration test [${index + 1}/${tests.size}]: ${test.path.last}"
-        if (args().isEmpty || args().exists(_ == test.path.last)) {
+        if (args().isEmpty || args().contains(test.path.last)) {
 
           ctx.log.info(s"Starting ${logLine}")
 
@@ -209,7 +209,7 @@ trait MillIntegrationTestModule extends TaskModule {
 
     ctx.log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed")
 
-    if (!failed.isEmpty) {
+    if (failed.nonEmpty) {
       Result.Failure(s"${failed.size} integration test(s) failed:\n${failed.mkString("- \n", "- \n", "")}", Some(results))
     } else {
       Result.Success(results)
@@ -232,22 +232,19 @@ trait MillIntegrationTestModule extends TaskModule {
    * @return The [[PathRef]] to the mill executable (must have the executable flag).
    */
   def downloadMillTestVersion: T[PathRef] = T.persistent {
-    val mainVersion = parseVersion(millTestVersion()).get
+    val v = millTestVersion()
+    val mainVersion = parseVersion(v).get
     val suffix = mainVersion match {
-      case Array(0, 0, _) => ""
-      case Array(0, 1, _) => ""
-      case Array(0, 2, _) => ""
-      case Array(0, 3, _) => ""
-      case Array(0, 4, _) => ""
+      case Array(0, 0|1|2|3|4, _) => ""
       case _ => "-assembly"
     }
-    val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.mkString(".")}/${millTestVersion()}${suffix}"
+    val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.mkString(".")}/$v$suffix"
 
     // we avoid a download, if the previous download was successful
-    val target = T.ctx().dest / s"mill-${millTestVersion()}${suffix}.jar"
+    val target = T.dest / s"mill-$v$suffix.jar"
     if (!os.exists(target)) {
-      T.ctx().log.debug(s"Downloading ${url}")
-      val tmpfile = os.temp(dir = T.ctx().dest, deleteOnExit = false)
+      T.log.debug(s"Downloading $url")
+      val tmpfile = os.temp(dir = T.dest, deleteOnExit = false)
       os.remove(tmpfile)
       mill.modules.Util.download(url, os.rel / tmpfile.last)
       os.move(tmpfile, target)
