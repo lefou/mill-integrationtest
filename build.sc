@@ -7,11 +7,11 @@ import os.Path
 
 val baseDir = build.millSourcePath
 val rtMillVersion = build.version
-val integrationtestVersion = "0.2.2-SNAPSHOT"
+val integrationtestVersion = "0.3.0"
 
 val crossCases = Seq(
   "0.6.2" -> "2.12.11",
-  "0.6.2-20-08228b" -> "2.13.2"
+  "0.7.0" -> "2.13.2"
 )
 
 object integrationtest extends Cross[IntegrationtestCross](crossCases: _*)
@@ -54,6 +54,8 @@ class IntegrationtestCross(millVersion: String, crossScalaVersion: String) exten
       PathRef(millSourcePath / os.up / "LICENSE")
     )
   }
+
+  override def skipIdea: Boolean = millVersion != crossCases.head._1
 }
 
 object P extends Module {

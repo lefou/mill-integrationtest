@@ -1,5 +1,5 @@
 = Integration test plugin for mill plugins
-:version: 0.2.1
+:version: 0.3.0
 :exampleMillVersion: 0.6.1
 :toc:
 :toc-placement: preamble
@@ -251,7 +251,8 @@ The following table shows a matrix of compatible mill and mill-integrationtest v
 [options="header"]
 |===
 | mill-integrationtest | mill
-| 0.2.1 | 0.6.0 - 0.6.2
+| 0.3.0 | 0.6.2 - 0.7
+| 0.2.1 | 0.6.0 - 0.6.3
 | 0.2.0 | 0.5.7
 | 0.1.2 | 0.5.7
 | 0.1.1 | 0.5.7
@@ -262,7 +263,14 @@ The following table shows a matrix of compatible mill and mill-integrationtest v
 
 === master
 
-=== mill-integrationtest 0.2.1 -2020-02-27
+=== mill-integrationtest 0.3.0 - 2020-05-15
+
+* Cross-publishing for Mill API 0.6.2 (Scala 2.12) and mill API 0.7.0 (Scala 2.13)
+* Use newer mill 0.6.2 API to publish to custom ivy repositories
+* Fixes Windows support
+* Only scan existing source dirs for test cases
+
+=== mill-integrationtest 0.2.1 - 2020-02-27
 
 * Bumped Mill API to 0.6.0
 
