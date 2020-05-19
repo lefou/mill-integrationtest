@@ -1,13 +1,13 @@
 package de.tobiasroeser.mill.integrationtest
 
-case class TestCase(
+case class TestCaseResult(
   name: String,
   result: TestResult,
   invocations: Seq[TestInvocationResult]
 ) {
   override def toString(): String = {
     val prefix = "\n    "
-    s"""Test case: ${name} ==> ${result}
+    s"""Test case: $name ==> $result
        |  Invocations: ${
       invocations
         .map(i => s"""${i.testInvocation} ==> ${i.result}""")
@@ -16,6 +16,6 @@ case class TestCase(
   }
 }
 
-object TestCase {
-  implicit def rw: upickle.default.ReadWriter[TestCase] = upickle.default.macroRW
+object TestCaseResult {
+  implicit def rw: upickle.default.ReadWriter[TestCaseResult] = upickle.default.macroRW
 }

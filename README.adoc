@@ -49,7 +49,7 @@ Your project should now look similar to this:
 |
 +-- itest/
     +-- src/
-        +-- 01-first-test/
+        +-- 01-first-test/   <-- this is a test project
         |   +-- build.sc
         |   +-- src/
         |
@@ -57,7 +57,7 @@ Your project should now look similar to this:
             +-- build.sc
 ----
 
-As the buildfiles `build.sc` in your test cases typically want to access the locally built plugin(s),
+As the buildfiles `build.sc` in your test projects typically want to access the locally built plugin(s),
 the plugins publishes all modules referenced under `pluginsUnderTest` and `temporaryIvyModule` to a temporary ivy repository,
 just before the test is executed.
 The mill version used in the integration test then uses that temporary ivy repository.
@@ -109,14 +109,17 @@ The `MillIntegrationTestModule` trait provides the following targets:
   Locations where integration tests are located.
   Each integration test is a sub-directory, containing a complete test mill project.
 
-* `def testCases: Target[Seq[PathRef]]` -
-  The directories each representing a mill test case.
+* `def testProjects: T[Seq[PathRef]]` -
+  The directories each representing a mill test project.
   Derived from `sources`.
 
-* `def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]]` -
+* `def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation])]]` -
   The test invocations to test the project.
-  Defaults to run `TestInvokation.Targets` with the targets from [[testTargets]] and expecting successful execution.
-  For each test case, you can define a seq of invocations.
+  Defaults to run `TestInvocation.Targets` with the targets from [[testTargets]] and expecting successful execution.
+  `PathRef` here is the path to your test project.
+  `Seq[TestInvocation]` is the invocations to be run.
+  If you define multiple `PathRef -> Seq[TestInvocation]` items for a test project (same PathRef),
+  Then each item is considered as a separated test case and will be run indepedently.
 
 * `def testTargets: Target[Seq[String]]` -
   _Deprecated: Please use `testInvocations` instead_
@@ -129,10 +132,10 @@ The `MillIntegrationTestModule` trait provides the following targets:
   Returns the `PathRef` to the mill executable (must have the executable flag).
 
 .Commands / Action Targets
-* `def test(): Command[Seq[TestCase]]` -
+* `def test(): Command[Seq[TestCaseResult]]` -
   Run the integration tests.
 
-* `def testCached: Target[Seq[TestCase]]` -
+* `def testCached: Target[Seq[TestCaseResult]]` -
   Run the integration tests (same as `test`), but only if any input has changed since the last run.
 
 == How can I ...

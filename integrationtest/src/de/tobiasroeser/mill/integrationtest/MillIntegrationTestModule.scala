@@ -2,11 +2,12 @@ package de.tobiasroeser.mill.integrationtest
 
 import java.nio.file.attribute.PosixFilePermission
 
+import scala.collection.mutable
 import scala.util.Try
 
 import mill._
 import mill.api.{Ctx, Result}
-import mill.define.{Command, Sources, Target, Task, TaskModule}
+import mill.define.{Command, Sources, Task, TaskModule}
 import mill.modules.Jvm.createJar
 import mill.scalalib._
 import mill.scalalib.publish._
@@ -27,10 +28,7 @@ trait MillIntegrationTestModule extends TaskModule {
    */
   def sources: Sources = T.sources(millSourcePath / 'src)
 
-  /**
-   * The directories each representing a mill test case.
-   * Derived from [[sources]].
-   */
+  @deprecated("use testProjects instead", "0.3.2")
   def testCases: T[Seq[PathRef]] = T {
     for {
       src <- sources() if src.path.toIO.isDirectory
@@ -40,9 +38,15 @@ trait MillIntegrationTestModule extends TaskModule {
   }
 
   /**
+    * The directories each representing a mill test project.
+    * Derived from [[sources]].
+    */
+  def testProjects: T[Seq[PathRef]] = T { testCases() }
+
+  /**
    * Run the integration tests.
    */
-  def test(args: String*): Command[Seq[TestCase]] = T.command {
+  def test(args: String*): Command[Seq[TestCaseResult]] = T.command {
     testTask(T.task {
       args
     })
@@ -58,7 +62,7 @@ trait MillIntegrationTestModule extends TaskModule {
   /**
    * Run the integration tests (same as `test`), but only if any input has changed since the last run.
    */
-  def testCached: T[Seq[TestCase]] = T {
+  def testCached: T[Seq[TestCaseResult]] = T {
     testTask(testCachedArgs)()
   }
 
@@ -66,7 +70,7 @@ trait MillIntegrationTestModule extends TaskModule {
     * @see [[ITestConfig]] */
   def itestConfig: ITestConfig = ITestConfig()
 
-  protected def testTask(args: Task[Seq[String]]): Task[Seq[TestCase]] = T.task {
+  protected def testTask(args: Task[Seq[String]]): Task[Seq[TestCaseResult]] = T.task {
     /** Publish [[pluginsUnderTest]] and [[temporaryIvyModules]] to a local ivyPath
       * @return tuple of
       *         + ivyPath: Absolute path to the ivy.home directory that
@@ -90,48 +94,36 @@ trait MillIntegrationTestModule extends TaskModule {
 
     val (ivyPath, importFileContents) = publishPlugins()
 
-    val testCases = testInvocations()
-    //    val testInvocationsMap: Map[PathRef, TestInvocation.Targets] = testCases.toMap
-    val tests = testCases.map(_._1)
+    val tests = MillIntegrationTestModule.TestCase.fromTestInvocations(testInvocations())
 
     ctx.log.debug(s"Running ${tests.size} integration tests")
-    val results: Seq[TestCase] = tests.zipWithIndex.map {
+    val results: Seq[TestCaseResult] = tests.zipWithIndex.map {
       case (test, index) =>
         // TODO flush output streams, should we just wait a bit?
-        val logLine = s"integration test [${index + 1}/${tests.size}]: ${test.path.last}"
-        if (args().isEmpty || args().contains(test.path.last)) {
+        val logLine = s"integration test [${index + 1}/${tests.size}]: ${test.id}"
+        if (test.willRun(args())) {
 
           ctx.log.info(s"Starting ${logLine}")
 
           // per-test preparation
 
-          // The test dir
-          val testPath = ctx.dest / test.path.last
+          test.prepare(importFileContents)
 
-          // start clean
-          os.remove.all(testPath)
+          val millExe = downloadMillTestVersion().path.toIO.getAbsolutePath
 
-          // copy test project here
-          os.copy(from = test.path, to = testPath, createFolders = true)
-
-          // Write the plugins.sc file
-          os.write(testPath / "plugins.sc", importFileContents)
-
-          val millExe = downloadMillTestVersion().path
-
-          // also create a runner script, which can be ivoked manually
+          // also create a runner script, which can be invoked manually
           val (runScript, scriptBody, perms) =
             if(scala.util.Properties.isWin) (
-              testPath / "mill.bat",
+              test.wd / "mill.bat",
               s"""set JAVA_OPTS="-Divy.home=$ivyPath"
-                 |"${millExe.toIO.getAbsolutePath()}" -i %*
+                 |"$millExe" -i %*
                  |""".stripMargin,
-               null
+              null
             ) else (
-              testPath / "mill",
+              test.wd / "mill",
               s"""#!/usr/bin/env sh
                  |export JAVA_OPTS="-Divy.home=$ivyPath"
-                 |exec ${millExe.toIO.getAbsolutePath()} -i "$$@"
+                 |exec $millExe -i "$$@"
                  |""".stripMargin,
               os.PermSet(0) +
                 PosixFilePermission.OWNER_READ +
@@ -145,36 +137,7 @@ trait MillIntegrationTestModule extends TaskModule {
             perms = perms
           )
 
-          var prevFailed: Boolean = false
-
-          val results: Seq[TestInvocationResult] = testCases.toMap.apply(test).map { invocation =>
-            if (prevFailed) TestInvocationResult(invocation, TestResult.Skipped, Seq(), Seq())
-            else {
-              val result = invocation match {
-                case invocation @ TestInvocation.Targets(targets, expectedExitCode) =>
-
-                  // run mill with test targets
-                  // ENV=env mill -i testTargets
-                  val result = os.proc(runScript, targets)
-                    .call(
-                      cwd = testPath,
-                      check = false
-                    )
-
-                  val res = if (result.exitCode == expectedExitCode) {
-                    TestResult.Success
-                  } else {
-                    TestResult.Failed
-                  }
-
-                  TestInvocationResult(invocation, res, result.out.lines, result.err.lines)
-              }
-
-              // abort condition
-              if (result.result == TestResult.Failed) prevFailed = true
-              result
-            }
-          }
+          val results: Seq[TestInvocationResult] = test.run(runScript)
 
           val finalRes = results.foldLeft[TestResult](TestResult.Success) {
             case (TestResult.Success, TestInvocationResult(_, TestResult.Success, _, _)) => TestResult.Success
@@ -189,11 +152,11 @@ trait MillIntegrationTestModule extends TaskModule {
             case TestResult.Failed => ctx.log.error(s"Failed ${logLine}")
           }
 
-          TestCase(testPath.last, finalRes, results)
+          TestCaseResult(test.id, finalRes, results)
 
         } else {
           ctx.log.debug(s"Skipping ${logLine}")
-          TestCase(test.path.last, TestResult.Skipped, Seq())
+          TestCaseResult(test.id, TestResult.Skipped, Nil)
         }
     }
 
@@ -265,10 +228,14 @@ trait MillIntegrationTestModule extends TaskModule {
 
   /**
    * The test invocations to test the project.
-   * Defaults to run `TestIncokation.Targets` with the targets from [[testTargets]] and expecting successful execution.
+   * Defaults to run `TestInvocation.Targets` with the targets from [[testTargets]] and expecting successful execution.
+   * `PathRef` here is the path to your test project.
+   * `Seq[TestInvocation]` is the invocations to be run.
+   * If you define multiple `PathRef -> Seq[TestInvocation]` items for a test project (same PathRef),
+   * Then each item is considered as a separated test case and will be run indepedently.
    */
-  def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
-    testCases().map(tc => tc -> Seq(TestInvocation.Targets(testTargets())))
+  def testInvocations: T[Seq[(PathRef, Seq[TestInvocation])]] = T {
+    testProjects().map(tc => tc -> Seq(TestInvocation.Targets(testTargets())))
   }
 
   /**
@@ -327,4 +294,77 @@ object MillIntegrationTestModule {
       .map(_.toInt)
   }
 
+  /**
+    * A TestCase:
+    * + Can be [[run]]:
+    *   The test project `path` is copied to an unique working directory [[wd]].
+    *   Then the `invocations` are invoked.
+    *   Then the result Seq[TestInvocationResult] can be processed later
+    *   so that we know this TestCase is passed or failed.
+    * + Can be filtered when run. See [[willRun]]
+    *
+    * @param path path to the mill test project used to test your mill module
+    *             This path point to a directory contain "build.sc" file.
+    *             see [[MillIntegrationTestModule.testProjects]]
+    * @param name We support multiple TestCase for a test project,
+    *             So, we need a `name` to differentiate those cases.
+    *             This must be a valid directory name.
+    */
+  private case class TestCase(path: PathRef, name: String, invocations: Seq[TestInvocation]) {
+    /** id of this TestCase. Used for logging and filtering which TestCase should be run */
+    def id = s"${path.path.last}.$name"
+
+    /** return true if this TestCase will be run when user pass `args` to [[MillIntegrationTestModule.test]] command.
+      * Eg, TestCase("itest/src/simple", "case1", _) will be run if user run:
+      * + `mill itest.test` // no args
+      * + or `mill itest.test simple other_cases`
+      * + or `mill itest.test simple.case1 other_cases` */
+    def willRun(args: Seq[String]): Boolean = args.isEmpty || args.contains(path.path.last) || args.contains(id)
+
+    /** When this TestCase is run, the test project will be copied to this working directory */
+    def wd(implicit ctx: Ctx): os.Path = ctx.dest / path.path.last / name
+
+    /** Prepare the working directory */
+    def prepare(`plugins.sc`: String)(implicit ctx: Ctx): Unit = {
+      val testPath = wd
+
+      // start clean
+      os.remove.all(testPath)
+
+      // copy test project here
+      os.copy(from = path.path, to = testPath, createFolders = true)
+
+      // Write the plugins.sc file
+      os.write(testPath / "plugins.sc", `plugins.sc`)
+    }
+
+    def run(millPath: os.Path)(implicit ctx: Ctx): Seq[TestInvocationResult] = {
+      var prevFailed: Boolean = false
+
+      invocations.map { invocation =>
+        if (prevFailed) TestInvocationResult(invocation, TestResult.Skipped, Nil, Nil)
+        else {
+          val result = invocation match {
+            case i: TestInvocation.Targets => i.run(millPath, wd)
+          }
+          // abort condition
+          if (result.result == TestResult.Failed) prevFailed = true
+          result
+        }
+      }
+    }
+  }
+
+  private object TestCase {
+    def fromTestInvocations(s: Seq[(PathRef, Seq[TestInvocation])]): Seq[TestCase] =
+      s.foldLeft(mutable.Map.empty[PathRef, Seq[TestCase]]) {
+        case (m, (p, invocations)) =>
+          val updateWith = m.get(p) match {
+            case None           => Seq(TestCase(p, "0", invocations))
+            case Some(oldCases) => oldCases :+ TestCase(p, oldCases.size.toString, invocations)
+          }
+          m.update(p, updateWith)
+          m
+      }.values.toSeq.flatten
+  }
 }
