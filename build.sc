@@ -7,7 +7,7 @@ import os.Path
 
 val baseDir = build.millSourcePath
 val rtMillVersion = build.version
-val integrationtestVersion = "0.3.0"
+val integrationtestVersion = "0.3.1-SNAPSHOT"
 
 val crossCases = Seq(
   "0.6.2" -> "2.12.11",
