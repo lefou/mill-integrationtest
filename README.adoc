@@ -6,6 +6,7 @@
 
 ifdef::env-github[]
 image:https://travis-ci.org/lefou/mill-integrationtest.svg?branch=master["Travis CI Build Status", link="https://travis-ci.org/lefou/mill-integrationtest"]
+image:https://github.com/lefou/mill-integrationtest/workflows/.github/workflows/build.yml/badge.svg[GitHub Actions, link="https://github.com/lefou/mill-integrationtest/actions"]
 endif::[]
 
 Integration testing for mill plugins.
