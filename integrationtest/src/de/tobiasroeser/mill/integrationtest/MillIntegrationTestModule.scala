@@ -122,27 +122,29 @@ trait MillIntegrationTestModule extends TaskModule {
           val millExe = downloadMillTestVersion().path
 
           // also create a runner script, which can be ivoked manually
-          val (runScript, scriptBody) =
+          val (runScript, scriptBody, perms) =
             if(scala.util.Properties.isWin) (
               testPath / "mill.bat",
               s"""set JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
                  |"${millExe.toIO.getAbsolutePath()}" -i %*
-                 |""".stripMargin
+                 |""".stripMargin,
+               null
             ) else (
               testPath / "mill",
               s"""#!/usr/bin/env sh
                  |export JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
                  |exec ${millExe.toIO.getAbsolutePath()} -i "$$@"
-                 |""".stripMargin
+                 |""".stripMargin,
+              os.PermSet(0) +
+                PosixFilePermission.OWNER_READ +
+                PosixFilePermission.OWNER_WRITE +
+                PosixFilePermission.OWNER_EXECUTE
             )
 
           os.write(
             target = runScript,
             data = scriptBody,
-            perms = os.PermSet(0) +
-              PosixFilePermission.OWNER_READ +
-              PosixFilePermission.OWNER_WRITE +
-              PosixFilePermission.OWNER_EXECUTE
+            perms = perms
           )
 
           var prevFailed: Boolean = false
@@ -250,7 +252,9 @@ trait MillIntegrationTestModule extends TaskModule {
       os.remove(tmpfile)
       mill.modules.Util.download(url, os.rel / tmpfile.last)
       os.move(tmpfile, target)
-      os.perms.set(target, os.perms(target) + PosixFilePermission.OWNER_EXECUTE)
+      if(!scala.util.Properties.isWin) {
+        os.perms.set(target, os.perms(target) + PosixFilePermission.OWNER_EXECUTE)
+      }
     }
 
     PathRef(target)
