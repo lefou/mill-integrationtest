@@ -61,6 +61,10 @@ trait MillIntegrationTestModule extends TaskModule {
     testTask(testCachedArgs)()
   }
 
+  /** override this to config some itest behaviour.
+    * @see [[ITestConfig]] */
+  def itestConfig: ITestConfig = ITestConfig()
+
   protected def testTask(args: Task[Seq[String]]): Task[Seq[TestCase]] = T.task {
     val ctx = T.ctx()
 
@@ -233,21 +237,19 @@ trait MillIntegrationTestModule extends TaskModule {
    */
   def downloadMillTestVersion: T[PathRef] = T.persistent {
     val fullVersion = millTestVersion()
-    val mainVersion = parseVersion(fullVersion).get
-    val suffix = mainVersion match {
-      case Array(0, 0|1|2|3|4, _) => ""
-      case _ => "-assembly"
-    }
-    val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.mkString(".")}/${fullVersion}${suffix}"
-
+    val target = itestConfig.millTestVersionDownloadPath(fullVersion)
     // we avoid a download, if the previous download was successful
-    val target = T.dest / s"mill-${fullVersion}${suffix}.jar"
     if (!os.exists(target)) {
+      val mainVersion = parseVersion(fullVersion).get
+      val suffix = mainVersion match {
+        case Array(0, 0|1|2|3|4, _) => ""
+        case _ => "-assembly"
+      }
+      val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.mkString(".")}/${fullVersion}${suffix}"
       T.log.debug(s"Downloading ${url}")
       val tmpfile = os.temp(dir = T.dest, deleteOnExit = false)
-      os.remove(tmpfile)
       mill.modules.Util.download(url, os.rel / tmpfile.last)
-      os.move(tmpfile, target)
+      os.move(tmpfile, target, createFolders = true)
       if(!scala.util.Properties.isWin) {
         os.perms.set(target, os.perms(target) + PosixFilePermission.OWNER_EXECUTE)
       }
