@@ -187,6 +187,23 @@ def testInvocations = T{
 }
 ----
 
+=== Better prints context of failed targets
+
+Use `munit`'s Assertions when defining your test targets
+[source,scala]
+----
+// itest/src/project1/build.sc
+import $ivy.`org.scalameta::munit:0.7.7`, munit.Assertions._
+def verify() = T.command {
+  assert(None.isDefined)
+  val fixedScala = read(os.pwd / "foo" / "src" / "Fix.scala")
+  val expected   = """object Fix {
+                   |  def procedure(): Unit = {} xxx
+                   |}
+                   |""".stripMargin
+  assertEquals(fixedScala, expected)
+}
+----
 
 === Properly test a mill plugin that uses a worker implementation
 
