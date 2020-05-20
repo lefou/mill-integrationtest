@@ -345,7 +345,8 @@ object MillIntegrationTestModule {
         if (prevFailed) TestInvocationResult(invocation, TestResult.Skipped, Nil, Nil)
         else {
           val result = invocation match {
-            case i: TestInvocation.Targets => i.run(millPath, wd)
+            case t: TestInvocation.Targets => t.run(millPath, wd)
+            case c: TestInvocation.Cmd => c.run(wd)
           }
           // abort condition
           if (result.result == TestResult.Failed) prevFailed = true
