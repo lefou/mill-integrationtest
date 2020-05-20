@@ -28,13 +28,6 @@ class IntegrationtestCross(millVersion: String, crossScalaVersion: String) exten
     ivy"com.lihaoyi::mill-scalalib:${millVersion}"
   )
 
-  object test extends Tests {
-    override def testFrameworks = Seq("org.scalatest.tools.Framework")
-    override def ivyDeps = Agg(
-      ivy"org.scalatest::scalatest:3.0.8"
-    )
-  }
-
   override def javacOptions = Seq("-source", "1.8", "-target", "1.8")
 
   override def pomSettings = PomSettings(
@@ -69,7 +62,7 @@ object P extends Module {
   def checkRelease: T[Unit] = T.input {
     if(integrationtestVersion.contains("SNAPSHOT")) sys.error("Cannot release a SNAPSHOT version")
     else {
-      T.traverse(crossCases){case (mv,sv) => integrationtest(mv, sv).test.testCached}()
+      T.traverse(crossCases){case (mv,sv) => itest(mv, sv).testCached}()
       ()
     }
   }
@@ -97,5 +90,109 @@ object P extends Module {
     os.write.over(millw, res.out.text())
     os.perms.set(millw, os.perms(millw) + java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE)
     target
+  }
+}
+
+//++++ integrationtest the MillIntegrationTestModule
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:0.3.1`
+import de.tobiasroeser.mill.integrationtest._
+
+object itest extends Cross[Itest](crossCases: _*)
+class Itest(millVersion: String, crossScalaVersion: String) extends MillIntegrationTestModule {
+  import Itest._
+
+  def pluginsUnderTest = Seq(integrationtest(millVersion, crossScalaVersion))
+
+  def millTestVersion = T {
+    T.env.getOrElse("TEST_MILL_VERSION", millVersion)
+  }
+
+  // correct the two cross-levels
+  override def millSourcePath: Path = super.millSourcePath / os.up / os.up
+
+  def testInvocations = T {
+    import TestInvocation._
+
+    remoteTestProjects.foreach(_.init(millSourcePath))
+
+    // mill-git test require this git config
+    // https://github.com/joan38/mill-git/blob/4254b37/.github/workflows/ci.yml#L21
+    // @note when we have TestInvocation.Cmd (not available in `integrationtest:0.3.1`),
+    // we should add this as a TestInvocation for mill-git below instead of early running this here
+    if (T.env.get("CI").contains("true")) {
+      os.proc("git", "config", "--global", "user.name", "CI").call()
+    }
+
+    Seq(
+      PathRef(millSourcePath / "mill-scalafix") -> Seq(Targets(Seq("itest._.test"))),
+      PathRef(millSourcePath / "mill-git")      -> Seq(Targets(Seq("itest._.test")))
+    )
+  }
+
+  def remoteTestProjects: Seq[RemoteProject] = Seq(
+    RemoteProject("https://github.com/joan38/mill-scalafix.git", "fabc27d", tpolecatReplacer),
+    RemoteProject("https://github.com/joan38/mill-git.git", "af33063", tpolecatReplacer)
+  )
+
+}
+object Itest {
+  def replaceContent(p: os.Path, replacers: Seq[String => String]): Unit = {
+    val s = os.read(p)
+    val all = replacers.reduce(_ andThen _)
+    os.write.over(p, all(s))
+  }
+
+  /** CodeReplacer */
+  case class R(from: String, to: String, regex: Boolean = true, firstOnly: Boolean = true) extends (String => String) {
+    import java.util.regex.Pattern.{compile, LITERAL}
+    import java.util.regex.Matcher.quoteReplacement
+
+    def apply(s: String): String = (regex, firstOnly) match {
+      case (true, true) => s.replaceFirst(from, to)
+      case (true, false) => s.replaceAll(from, to)
+      case (false, true) => compile(from, LITERAL).matcher(s).replaceFirst(quoteReplacement(to))
+      case (false, false) => s.replace(from, to)
+    }
+  }
+
+  val defaultReplacers = Seq(
+    // replace the $ivy import by `$exec.plugins` to use the the publishLocal version
+    R("""import \$ivy\.`de\.tototec::de\.tobiasroeser\.mill\.integrationtest:.+`""",
+      """import \$exec.plugins"""),
+    // remove mill-git
+    R("""import \$ivy\.`com\.goyeau::mill-git:.+`\n""", ""),
+    // hard-code `publishVersion` because mill-git don't support git submodule (yet)
+    R("import com.goyeau.mill.git.GitVersionedPublishModule",
+      """trait GitVersionedPublishModule extends mill.scalalib.PublishModule {
+        | def publishVersion = "0.0.1-SNAPSHOT"
+        |}""".stripMargin
+    ).andThen(_.ensuring(!_.contains("import com.goyeau.mill.git.")))
+  )
+
+  // update mill-tpolecat to 0.1.3 for scala 2.13 compat
+  val tpolecatReplacer = R(
+    "::mill-tpolecat:0.1.2`", "::mill-tpolecat:0.1.3`", regex = false
+  ).compose[String](_.ensuring(
+    _.contains("::mill-tpolecat:0.1.2`"),
+    "build.sc in a test project don't import mill-tpolecat:0.1.2. Pls remove the corresponding tpolecatReplacer"
+  ))
+
+  case class RemoteProject(gitUrl: String, version: String, replacers: String => String*) {
+    def name = gitUrl.substring(gitUrl.lastIndexOf('/') + 1).stripSuffix(".git")
+
+    /** git clone and init a test project into a subdirectory of `into` */
+    def init(into: Path): Unit = {
+      val d = into / name
+      if (os.exists(d)) return
+
+      os.proc("git", "clone", gitUrl, d).call()
+      os.proc("git", "checkout", version).call(d)
+
+      // mill-integrationtest will create those files when running test
+      os.remove.all(d / "mill")
+      os.remove.all(d / "mill.bat")
+
+      replaceContent(d / "build.sc", defaultReplacers ++ replacers)
+    }
   }
 }
