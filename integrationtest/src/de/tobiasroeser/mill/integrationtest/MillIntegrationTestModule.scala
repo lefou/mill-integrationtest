@@ -232,18 +232,18 @@ trait MillIntegrationTestModule extends TaskModule {
    * @return The [[PathRef]] to the mill executable (must have the executable flag).
    */
   def downloadMillTestVersion: T[PathRef] = T.persistent {
-    val v = millTestVersion()
-    val mainVersion = parseVersion(v).get
+    val fullVersion = millTestVersion()
+    val mainVersion = parseVersion(fullVersion).get
     val suffix = mainVersion match {
       case Array(0, 0|1|2|3|4, _) => ""
       case _ => "-assembly"
     }
-    val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.mkString(".")}/$v$suffix"
+    val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.mkString(".")}/${fullVersion}${suffix}"
 
     // we avoid a download, if the previous download was successful
-    val target = T.dest / s"mill-$v$suffix.jar"
+    val target = T.dest / s"mill-${fullVersion}${suffix}.jar"
     if (!os.exists(target)) {
-      T.log.debug(s"Downloading $url")
+      T.log.debug(s"Downloading ${url}")
       val tmpfile = os.temp(dir = T.dest, deleteOnExit = false)
       os.remove(tmpfile)
       mill.modules.Util.download(url, os.rel / tmpfile.last)
