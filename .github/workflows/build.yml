@@ -10,6 +10,16 @@ jobs:
     continue-on-error: ${{ matrix.os == 'windows-latest' }}
     steps:
       - uses: actions/checkout@v2
+      - name: Cache ivy
+        uses: actions/cache@v1
+        with:
+          path: ~/.ivy2/cache
+          key: ivy-${{ runner.os }}-${{ hashFiles('**/build.sc') }}
+      - name: Cache coursier
+        uses: actions/cache@v1
+        with:
+          path: ~/.cache/coursier
+          key: coursier-${{ runner.os }}-${{ hashFiles('**/build.sc') }}
       - uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java-version }}
