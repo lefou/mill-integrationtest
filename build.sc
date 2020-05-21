@@ -99,7 +99,7 @@ import de.tobiasroeser.mill.integrationtest._
 
 object itest extends Cross[Itest](crossCases: _*)
 class Itest(millVersion: String, crossScalaVersion: String) extends MillIntegrationTestModule {
-  import Itest._
+  import ItestUtil._
 
   def pluginsUnderTest = Seq(integrationtest(millVersion, crossScalaVersion))
 
@@ -135,7 +135,8 @@ class Itest(millVersion: String, crossScalaVersion: String) extends MillIntegrat
   )
 
 }
-object Itest {
+
+object ItestUtil {
   def replaceContent(p: os.Path, replacers: Seq[String => String]): Unit = {
     val s = os.read(p)
     val all = replacers.reduce(_ andThen _)
