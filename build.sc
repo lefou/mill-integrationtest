@@ -130,55 +130,26 @@ class Itest(millVersion: String, crossScalaVersion: String) extends MillIntegrat
   }
 
   def remoteTestProjects: Seq[RemoteProject] = Seq(
-    RemoteProject("https://github.com/joan38/mill-scalafix.git", "fabc27d", tpolecatReplacer),
-    RemoteProject("https://github.com/joan38/mill-git.git", "af33063", tpolecatReplacer)
+    RemoteProject("https://github.com/ohze/mill-scalafix.git", "4e5c709"),
+    RemoteProject("https://github.com/joan38/mill-git.git", "5ed3839")
   )
 
 }
 
 object ItestUtil {
-  def replaceContent(p: os.Path, replacers: Seq[String => String]): Unit = {
+  def replaceContent(p: os.Path, contentChange: String => String): Unit = {
     val s = os.read(p)
-    val all = replacers.reduce(_ andThen _)
-    os.write.over(p, all(s))
+    val newContent = contentChange(s)
+    os.write.over(p, newContent)
   }
 
-  /** CodeReplacer */
-  case class R(from: String, to: String, regex: Boolean = true, firstOnly: Boolean = true) extends (String => String) {
-    import java.util.regex.Pattern.{compile, LITERAL}
-    import java.util.regex.Matcher.quoteReplacement
+  /** replace the $ivy import by `$exec.plugins` to use the the publishLocal version */
+  val itestReplacer: String => String =
+    _.replaceFirst(
+      """import \$ivy\.`de\.tototec::de\.tobiasroeser\.mill\.integrationtest:.+`""",
+      """import \$exec.plugins""")
 
-    def apply(s: String): String = (regex, firstOnly) match {
-      case (true, true) => s.replaceFirst(from, to)
-      case (true, false) => s.replaceAll(from, to)
-      case (false, true) => compile(from, LITERAL).matcher(s).replaceFirst(quoteReplacement(to))
-      case (false, false) => s.replace(from, to)
-    }
-  }
-
-  val defaultReplacers = Seq(
-    // replace the $ivy import by `$exec.plugins` to use the the publishLocal version
-    R("""import \$ivy\.`de\.tototec::de\.tobiasroeser\.mill\.integrationtest:.+`""",
-      """import \$exec.plugins"""),
-    // remove mill-git
-    R("""import \$ivy\.`com\.goyeau::mill-git:.+`\n""", ""),
-    // hard-code `publishVersion` because mill-git don't support git submodule (yet)
-    R("import com.goyeau.mill.git.GitVersionedPublishModule",
-      """trait GitVersionedPublishModule extends mill.scalalib.PublishModule {
-        | def publishVersion = "0.0.1-SNAPSHOT"
-        |}""".stripMargin
-    ).andThen(_.ensuring(!_.contains("import com.goyeau.mill.git.")))
-  )
-
-  // update mill-tpolecat to 0.1.3 for scala 2.13 compat
-  val tpolecatReplacer = R(
-    "::mill-tpolecat:0.1.2`", "::mill-tpolecat:0.1.3`", regex = false
-  ).compose[String](_.ensuring(
-    _.contains("::mill-tpolecat:0.1.2`"),
-    "build.sc in a test project don't import mill-tpolecat:0.1.2. Pls remove the corresponding tpolecatReplacer"
-  ))
-
-  case class RemoteProject(gitUrl: String, version: String, replacers: String => String*) {
+  case class RemoteProject(gitUrl: String, version: String) {
     def name = gitUrl.substring(gitUrl.lastIndexOf('/') + 1).stripSuffix(".git")
 
     /** git clone and init a test project into a subdirectory of `into` */
@@ -193,7 +164,7 @@ object ItestUtil {
       os.remove.all(d / "mill")
       os.remove.all(d / "mill.bat")
 
-      replaceContent(d / "build.sc", defaultReplacers ++ replacers)
+      replaceContent(d / "build.sc", itestReplacer)
     }
   }
 }
