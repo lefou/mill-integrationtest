@@ -12,9 +12,15 @@ import os.Path
   *          - if there is one there
   *          - and after you run `mill clean` or `rm -Rf out`
   *        + If false, mill will be downloaded to a sub-path of `./out`
+  * @param publishEmptySourceAndDoc
+  *        + If true, when [[MillIntegrationTestModule]] publish `pluginsUnderTest` and `temporaryIvyModules`
+  *          before testing, it will publish empty `-sources.jar` & `-javadoc.jar` to speedup the test process.
+  *        + If false, the actual [[mill.scalalib.JavaModule.sourceJar]] and [[mill.scalalib.JavaModule.docJar]]
+  *          will be invoked
   */
 case class ITestConfig(
   useGlobalMillCache: Boolean = true,
+  publishEmptySourceAndDoc: Boolean = true,
 ) {
   def millTestVersionDownloadPath(fullVersion: String)(implicit ctx: Ctx): Path =
     if (useGlobalMillCache) {

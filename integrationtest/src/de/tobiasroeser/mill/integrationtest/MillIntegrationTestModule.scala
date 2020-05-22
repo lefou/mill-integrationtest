@@ -7,6 +7,7 @@ import scala.util.Try
 import mill._
 import mill.api.{Ctx, Result}
 import mill.define.{Command, Sources, Target, Task, TaskModule}
+import mill.modules.Jvm.createJar
 import mill.scalalib._
 import mill.scalalib.publish._
 
@@ -66,34 +67,28 @@ trait MillIntegrationTestModule extends TaskModule {
   def itestConfig: ITestConfig = ITestConfig()
 
   protected def testTask(args: Task[Seq[String]]): Task[Seq[TestCase]] = T.task {
-    val ctx = T.ctx()
-
-    // publish Local
-    val ivyPath = ctx.dest / "ivyRepo"
-
-    ctx.log.debug("Publishing plugins under test into test ivy repo")
-    val publisher = new LocalIvyPublisher(ivyPath / 'local)
-    (pluginUnderTestDetails() ++ temporaryIvyModulesDetails()).foreach { detail =>
-      publisher.publish(
-        jar = detail._1.path,
-        sourcesJar = detail._2._1.path,
-        docJar = detail._2._2._1.path,
-        pom = detail._2._2._2._1.path,
-        ivy = detail._2._2._2._2._1.path,
-        artifact = detail._2._2._2._2._2,
-        extras = Seq()
-      )
+    /** Publish [[pluginsUnderTest]] and [[temporaryIvyModules]] to a local ivyPath
+      * @return tuple of
+      *         + ivyPath: Absolute path to the ivy.home directory that
+      *           [[pluginsUnderTest]] and [[temporaryIvyModules]] are published
+      *         + The content of `plugins.sc` file to be imported in `build.sc` of test projects
+      */
+    def publishPlugins() = {
+      val ivyPath = T.dest / "ivyRepo"
+      val publisher = new LocalIvyPublisher(ivyPath / "local")
+      val plugins = pluginUnderTestDetails()
+      (plugins ++ temporaryIvyModulesDetails()).foreach {
+        case (((((jar, src), doc), pom), ivy), art) =>
+          publisher.publish(jar.path, src.path, doc.path, pom.path, ivy.path, art, Nil)
+      }
+      ivyPath.toIO.getAbsolutePath -> plugins.map {
+        case (_, art) => s"import $$ivy.`${art.group}:${art.id}:${art.version}`"
+      }.mkString("\n")
     }
 
-    val artifactMetadata = Target.sequence(pluginsUnderTest.map(_.artifactMetadata))()
+    val ctx = T.ctx()
 
-    val importFileContents = {
-      val header = Seq("// Import a locally published version of the plugin under test")
-      val body = artifactMetadata.map { meta =>
-        s"import $$ivy.`${meta.group}:${meta.id}:${meta.version}`"
-      }
-      header ++ body
-    }.mkString("\n")
+    val (ivyPath, importFileContents) = publishPlugins()
 
     val testCases = testInvocations()
     //    val testInvocationsMap: Map[PathRef, TestInvocation.Targets] = testCases.toMap
@@ -128,14 +123,14 @@ trait MillIntegrationTestModule extends TaskModule {
           val (runScript, scriptBody, perms) =
             if(scala.util.Properties.isWin) (
               testPath / "mill.bat",
-              s"""set JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
+              s"""set JAVA_OPTS="-Divy.home=$ivyPath"
                  |"${millExe.toIO.getAbsolutePath()}" -i %*
                  |""".stripMargin,
                null
             ) else (
               testPath / "mill",
               s"""#!/usr/bin/env sh
-                 |export JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
+                 |export JAVA_OPTS="-Divy.home=$ivyPath"
                  |exec ${millExe.toIO.getAbsolutePath()} -i "$$@"
                  |""".stripMargin,
               os.PermSet(0) +
@@ -297,50 +292,28 @@ trait MillIntegrationTestModule extends TaskModule {
    * Internal target used to trigger required artifacts of the plugins under test.
    * You should not need to use or override this in you buildfile.
    */
-  protected def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
-    Task.traverse(pluginsUnderTest) { plugin =>
-      new Task.Zipped(
-        plugin.jar,
-        new Task.Zipped(
-          plugin.sourceJar,
-          new Task.Zipped(
-            plugin.docJar,
-            new Task.Zipped(
-              plugin.pom,
-              new Task.Zipped(
-                plugin.ivy,
-                plugin.artifactMetadata
-              )
-            )
-          )
-        )
-      )
-    }
+  protected def pluginUnderTestDetails: Task.Sequence[(((((PathRef, PathRef), PathRef), PathRef), PathRef), Artifact)] =
+    T.traverse(pluginsUnderTest)(publishPlugin)
 
   /**
    * Internal target used to trigger required artifacts of the plugins under test.
    * You should not need to use or override this in you buildfile.
    */
-  protected def temporaryIvyModulesDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
-    Task.traverse(temporaryIvyModules) { plugin =>
-      new Task.Zipped(
-        plugin.jar,
-        new Task.Zipped(
-          plugin.sourceJar,
-          new Task.Zipped(
-            plugin.docJar,
-            new Task.Zipped(
-              plugin.pom,
-              new Task.Zipped(
-                plugin.ivy,
-                plugin.artifactMetadata
-              )
-            )
-          )
-        )
-      )
-    }
+  protected def temporaryIvyModulesDetails: Task.Sequence[(((((PathRef, PathRef), PathRef), PathRef), PathRef), Artifact)] =
+    T.traverse(temporaryIvyModules)(publishPlugin)
 
+  private def publishPlugin(p: PublishModule) = {
+    val (src, doc) =
+      if (itestConfig.publishEmptySourceAndDoc) (emptyJar, emptyJar)
+      else (p.sourceJar, p.docJar)
+    p.jar zip src zip doc zip p.pom zip p.ivy zip p.artifactMetadata
+  }
+
+  private def emptyJar = T {
+    val d = T.dest / "empty"
+    os.makeDir.all(d)
+    createJar(Agg(d))
+  }
 }
 
 object MillIntegrationTestModule {
