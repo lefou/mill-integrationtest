@@ -1,13 +1,16 @@
+// mill plugins
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version:0.0.1`
+
 import scala.util.matching.Regex
 import mill._
 import mill.scalalib._
 import mill.define.{Sources, Task}
 import mill.scalalib.publish._
 import os.Path
+import de.tobiasroeser.mill.vcs.version.VcsVersion
 
 val baseDir = build.millSourcePath
 val rtMillVersion = build.version
-val integrationtestVersion = "0.3.2-SNAPSHOT"
 
 val crossCases = Seq(
   "0.6.2" -> "2.12.11",
@@ -18,8 +21,8 @@ object integrationtest extends Cross[IntegrationtestCross](crossCases: _*)
 class IntegrationtestCross(millVersion: String, crossScalaVersion: String) extends ScalaModule with PublishModule {
   // correct the two cross-levels
   override def millSourcePath: Path = super.millSourcePath / os.up / os.up
-  def publishVersion = integrationtestVersion
-  def scalaVersion = crossScalaVersion
+  override def publishVersion = VcsVersion.vcsState().format()
+  override def scalaVersion = crossScalaVersion
   override def artifactName = "de.tobiasroeser.mill.integrationtest"
 
   override def compileIvyDeps = Agg(
@@ -60,31 +63,6 @@ class IntegrationtestCross(millVersion: String, crossScalaVersion: String) exten
 
 object P extends Module {
 
-  def install() = T.command{
-    T.traverse(crossCases){case (mv,sv) => integrationtest(mv, sv).publishLocal()}()
-//    integrationtest.publishLocal()()
-    println(s"Published as: ${integrationtestVersion}")
-  }
-
-  def checkRelease: T[Unit] = T.input {
-    if(integrationtestVersion.contains("SNAPSHOT")) sys.error("Cannot release a SNAPSHOT version")
-    else {
-      T.traverse(crossCases){case (mv,sv) => integrationtest(mv, sv).test.testCached}()
-      ()
-    }
-  }
-
-  def release(sonatypeCreds: String, release: Boolean = true) = T.command {
-    checkRelease()
-    T.traverse(crossCases){case (mv,sv) =>
-      integrationtest(mv, sv).publish(
-        sonatypeCreds = sonatypeCreds,
-        release = release,
-        readTimeout = 600000
-      )
-    }()
-    ()
-  }
   /**
    * Update the millw script.
    */
