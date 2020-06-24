@@ -5,7 +5,6 @@
 :toc-placement: preamble
 
 ifdef::env-github[]
-image:https://travis-ci.org/lefou/mill-integrationtest.svg?branch=master["Travis CI Build Status", link="https://travis-ci.org/lefou/mill-integrationtest"]
 image:https://github.com/lefou/mill-integrationtest/workflows/.github/workflows/build.yml/badge.svg[GitHub Actions, link="https://github.com/lefou/mill-integrationtest/actions"]
 endif::[]
 
@@ -263,7 +262,7 @@ The following table shows a matrix of compatible mill and mill-integrationtest v
 
 == Changelog
 
-=== master
+=== main
 
 === mill-integrationtest 0.3.1 - 2020-05-19
 
