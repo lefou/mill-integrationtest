@@ -31,7 +31,7 @@ class IntegrationtestCross(millVersion: String, crossScalaVersion: String) exten
   object test extends Tests {
     override def testFrameworks = Seq("org.scalatest.tools.Framework")
     override def ivyDeps = Agg(
-      ivy"org.scalatest::scalatest:3.0.8"
+      ivy"org.scalatest::scalatest:3.2.0"
     )
   }
 
