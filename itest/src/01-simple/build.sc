@@ -1,5 +1,7 @@
 // mill plugins under test
 import $exec.plugins
+import $ivy.`org.scoverage::scalac-scoverage-runtime:1.4.1`
+
 import de.tobiasroeser.mill.integrationtest._
 import mill._
 import mill.scalalib._
