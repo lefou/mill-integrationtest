@@ -5,7 +5,8 @@
 :toc-placement: preamble
 
 ifdef::env-github[]
-image:https://github.com/lefou/mill-integrationtest/workflows/.github/workflows/build.yml/badge.svg[GitHub Actions, link="https://github.com/lefou/mill-integrationtest/actions"]
+image:https://github.com/lefou/mill-integrationtest/workflows/.github/workflows/build.yml/badge.svg[Build Status (GitHub Actions), link="https://github.com/lefou/mill-integrationtest/actions"]
+image:https://codecov.io/gh/lefou/mill-integrationtest/branch/main/graph/badge.svg[Test Coverage (Codecov.io), link="https://codecov.io/gh/lefou/mill-integrationtest"]
 endif::[]
 
 Integration testing for mill plugins.
