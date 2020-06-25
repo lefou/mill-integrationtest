@@ -1,5 +1,6 @@
 // mill plugins
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version:0.0.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:0.3.1`
 
 import scala.util.matching.Regex
 import mill._
@@ -8,21 +9,29 @@ import mill.define.{Sources, Task}
 import mill.scalalib.publish._
 import os.Path
 import de.tobiasroeser.mill.vcs.version.VcsVersion
+import de.tobiasroeser.mill.integrationtest.MillIntegrationTestModule
 
 val baseDir = build.millSourcePath
 val rtMillVersion = build.version
 
-val crossCases = Seq(
-  "0.6.2" -> "2.12.11",
-  "0.7.0" -> "2.13.2"
+// Tuple: Mill version -> Scala version
+val millApiCrossVersions = Seq(
+  "0.7.0" -> "2.13.2",
+  "0.6.2" -> "2.12.11"
 )
 
-object integrationtest extends Cross[IntegrationtestCross](crossCases: _*)
-class IntegrationtestCross(millVersion: String, crossScalaVersion: String) extends ScalaModule with PublishModule {
-  // correct the two cross-levels
-  override def millSourcePath: Path = super.millSourcePath / os.up / os.up
+// Tuple: Mill version -> Mill API version
+val itestMillVersions = Seq(
+  "0.7.3" -> "0.7.0",
+  "0.7.2" -> "0.7.0",
+  "0.7.1" -> "0.7.0",
+  "0.6.2" -> "0.6.2"
+)
+
+object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.map(_._1): _*)
+class IntegrationtestCross(millVersion: String) extends CrossScalaModule with PublishModule {
   override def publishVersion = VcsVersion.vcsState().format()
-  override def scalaVersion = crossScalaVersion
+  override def crossScalaVersion = millApiCrossVersions.toMap.apply(millVersion)
   override def artifactName = "de.tobiasroeser.mill.integrationtest"
 
   override def compileIvyDeps = Agg(
@@ -58,7 +67,16 @@ class IntegrationtestCross(millVersion: String, crossScalaVersion: String) exten
     )
   }
 
-  override def skipIdea: Boolean = millVersion != crossCases.head._1
+  override def skipIdea: Boolean = millVersion != millApiCrossVersions.head._1
+}
+
+object itest extends Cross[ItestCross](itestMillVersions.map(_._1): _*)
+class ItestCross(millVersion: String) extends MillIntegrationTestModule {
+  // correct cross level
+  override def millSourcePath: Path = super.millSourcePath / os.up
+  override def pluginsUnderTest = Seq(integrationtest(itestMillVersions.toMap.apply(millVersion)))
+  override def millTestVersion: T[String] = millVersion
+  override def testTargets: T[Seq[String]] = Seq("itest.test")
 }
 
 object P extends Module {
