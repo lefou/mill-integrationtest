@@ -128,6 +128,9 @@ The `MillIntegrationTestModule` trait provides the following targets:
   Override this, if you need to use a custom built mill version.
   Returns the `PathRef` to the mill executable (must have the executable flag).
 
+* `def useCachedMillDownload: T[Boolean]` -
+  If `true`, the downloaded mill version used for tests will be cached to the system cache dir (e.g. `~/.cache`).
+
 .Commands / Action Targets
 * `def test(): Command[Seq[TestCase]]` -
   Run the integration tests.

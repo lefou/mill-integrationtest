@@ -240,21 +240,38 @@ trait MillIntegrationTestModule extends TaskModule {
     }
     val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.mkString(".")}/${fullVersion}${suffix}"
 
-    // we avoid a download, if the previous download was successful
-    val target = T.dest / s"mill-${fullVersion}${suffix}.jar"
-    if (!os.exists(target)) {
-      T.log.debug(s"Downloading ${url}")
-      val tmpfile = os.temp(dir = T.dest, deleteOnExit = false)
-      os.remove(tmpfile)
-      mill.modules.Util.download(url, os.rel / tmpfile.last)
-      os.move(tmpfile, target)
-      if(!scala.util.Properties.isWin) {
-        os.perms.set(target, os.perms(target) + PosixFilePermission.OWNER_EXECUTE)
+    val cacheTarget =  T.env
+      .get("XDG_CACHE_HOME")
+      .map(os.Path(_))
+      .getOrElse(os.home / ".cache") / "mill" / "download" / fullVersion
+
+    if(useCachedMillDownload() && os.exists(cacheTarget)) {
+      PathRef(cacheTarget)
+    } else {
+      // we avoid a download, if the previous download was successful
+      val target = T.dest / s"mill-${fullVersion}${suffix}.jar"
+      if (!os.exists(target)) {
+        T.log.debug(s"Downloading ${url}")
+        val tmpfile = os.temp(dir = T.dest, deleteOnExit = false)
+        os.remove(tmpfile)
+        mill.modules.Util.download(url, os.rel / tmpfile.last)
+        os.move(tmpfile, target)
+        if (!scala.util.Properties.isWin) {
+          os.perms.set(target, os.perms(target) + PosixFilePermission.OWNER_EXECUTE)
+        }
+      }
+
+      if(useCachedMillDownload()) {
+        os.move(target, cacheTarget, createFolders = true)
+        PathRef(cacheTarget)
+      } else {
+        PathRef(target)
       }
     }
-
-    PathRef(target)
   }
+
+  /** If `true`, the downloaded mill version used for tests will be cached to the system cache dir (e.g. `~/.cache`). */
+  def useCachedMillDownload: T[Boolean] = T{ true }
 
   /**
    * The targets which are called to test the project.
