@@ -40,4 +40,7 @@ jobs:
       - run: ./millw -j 0 __.scoverage.xmlReport
 
       - name: Upload scoverage reports to codecov.io
-        run: ./scripts/codecov-bash-uploader.sh -f 'out/*/scoverage/xmlReport/dest/scoverage.xml'
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./out/*/xmlReport/dest/scoverage.xml
+          flags: integrationtest
