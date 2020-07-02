@@ -86,13 +86,12 @@ class ItestCross(millVersion: String) extends MillIntegrationTestModule {
 
   override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = Seq(
     PathRef(millSourcePath / "src" / "01-simple") -> Seq(
-      // test with debug print
+      // test with debug print and explicit test target
       TestInvocation.Targets(Seq("-d", "itest.test")),
-      // test default command
-      TestInvocation.Targets(Seq("itest"))
+      // test default target
+      TestInvocation.Targets(Seq("itest2"))
     )
   )
-  override def testTargets: T[Seq[String]] = Seq("-d", "itest.test")
 
   /** Replaces the plugin jar with a scoverage-enhanced version of it. */
   override def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =

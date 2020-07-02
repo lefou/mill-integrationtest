@@ -30,11 +30,14 @@ object demoplugin extends DemoModule {
 object demoutil extends DemoModule {
 }
 
-object itest extends MillIntegrationTestModule {
+trait Itest extends MillIntegrationTestModule {
   def millTestVersion = "0.7.3"
   def pluginsUnderTest = Seq(demoplugin)
-  override def temporaryIvyModules: Seq[PublishModule] = Seq(demoutil)
 
+}
+
+object itest extends Itest {
+  override def temporaryIvyModules: Seq[PublishModule] = Seq(demoutil)
   override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T{ Seq(
     PathRef(millSourcePath / "src" / "demo") -> Seq(
       TestInvocation.Targets(Seq("verify")),
@@ -43,3 +46,6 @@ object itest extends MillIntegrationTestModule {
   )}
 
 }
+
+// try to run with most defaults
+object itest2 extends Itest
