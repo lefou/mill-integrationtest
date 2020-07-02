@@ -1,6 +1,7 @@
 = Integration test plugin for mill plugins
 :version: 0.3.1
 :exampleMillVersion: 0.6.1
+:project-home: https://github.com/lefou/mill-integrationtest
 :toc:
 :toc-placement: preamble
 
@@ -256,6 +257,11 @@ script:
   - mill -i itest.test
 ----
 
+== Download
+
+You can download binary releases from
+https://search.maven.org/artifact/de.tototec/de.tobiasroeser.mill.integrationtest_2.13[Maven Central].
+
 == License
 
 This project is published under the https://www.apache.org/licenses/LICENSE-2.0[Apache License, Version 2.0].
@@ -280,6 +286,27 @@ The following table shows a matrix of compatible mill and mill-integrationtest v
 | 0.1.1 | 0.5.7
 | 0.1.0 | 0.3.6 - 0.5.3
 |===
+
+== About
+
+mill::
+https://github.com/lihaoyi/mill[Mill] is a Scala-based open source build tool.
+In my opinion the best build tool for the JVM.
+It is fast, reliable and easy to understand.
+
+me::
++
+--
+https://github.com/lefou/[I'm] a professional software developer and love to write and use open source software.
+I'm actively developing and maintaining mill as well as https://github.com/lefou?utf8=%E2%9C%93&tab=repositories&q=topic%3Amill&type=&language=[several mill plugins].
+
+If you like my work, please star it on GitHub. You can also support me via https://github.com/sponsors/lefou[GitHub Sponsors].
+--
+
+Contributing::
+If you found a bug or have a feature request, please open a {project-home}/issues[new issue on GitHub].
+I also accept {project-home}/pulls[pull requests on GitHub].
+
 
 == Changelog
 

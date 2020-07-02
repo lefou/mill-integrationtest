@@ -51,7 +51,8 @@ class IntegrationtestCross(millVersion: String) extends CrossScalaModule with Pu
     )
   }
 
-  override def javacOptions = Seq("-source", "1.8", "-target", "1.8")
+  override def javacOptions = Seq("-source", "1.8", "-target", "1.8", "-encoding", "UTF-8")
+  override def scalacOptions = Seq("-target:jvm-1.8", "-encoding", "UTF-8")
 
   override def pomSettings = PomSettings(
     description = "A integration test module useful for mill module development",
