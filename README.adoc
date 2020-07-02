@@ -1,4 +1,4 @@
-= Integration test plugin for mill plugins
+= mill-integrationtest - Integration test plugin for mill plugins
 :version: 0.3.1
 :exampleMillVersion: 0.6.1
 :project-home: https://github.com/lefou/mill-integrationtest
