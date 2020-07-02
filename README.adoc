@@ -258,7 +258,7 @@ Or you can all integration test in parallel with
 [source,sh]
 mill -j 0 itest[_].test
 
-=== Cross-Testing a cross build mill-plugin
+=== Cross-Testing a cross built mill-plugin
 
 In case you cross build your mill plugin to support multiple API versions,
 you need to parametrize your plugins under test.
@@ -313,35 +313,43 @@ class ItestCross(millItestVersion: String)  extends MillIntegrationTestModule {
 }
 ----
 
-Have a look at the `build.sc` of this mill plugin or how this is done in some other mill plugins:
+Have a look at the `build.sc` of this mill plugin to see how this is done.
+Here are also two other mill plugins that use this technique:
+
 * https://github.com/lefou/mill-vcs-version
-* https://github.com/lefou/mill-osgi
+* https://github.com/lefou/mill-kotlin
 
 === Collecting integration test coverage data with Scoverage
 
+Mill already provides the `mill.contrib.scoverage.ScoverageModule` as part of its contrib plugin collection.
 To ensure you're using the scoverage-enhanced class files (which are configured to write coverage data into a directrory)
-you need to make sure to use the right JAR with the enhanced class files `<module>.scoverage.jar` instead of the `<module>.jar`.
+in your integration tests, you need to make sure to use the right JAR with the enhanced class files `<module>.scoverage.jar` instead of the `<module>.jar`.
 
-IMPORTANT: It's important to only use the scoverage-enhanced classes in test.
+To accomplish this, you need to override the protected `pluginsUnderTestDetails` target and swap the binary JAR in case it is a `ScoverageModule`.
+This trick has the effect that we install the scoverage-enhanced JAR file in the test ivy repository.
+
+If you also use `temporaryIvyModules`, you need to do the same for `temporaryIvyModulesDetails`.
+
+IMPORTANT: It's important to only use the scoverage-enhanced classes in tests.
 If you would use them outside of your test case, loading them or executing their code would fail in almost all cases.
 
 [source,scala,subs="attributes"]
 ----
 class core extends ScalaModule with PublishModule with ScoverageModule {
   override def scoverageVersion = "{scoverage-version}"
+  ..
 }
 
 object itest extends MillIntegrationTestModule {
   override def pluginsUnderTest = Seq(core)
   override def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
-    Target.traverse(pluginsUnderTest) { p =>
+    T.traverse(pluginsUnderTest) { p =>
       val jar = p match {
         case p: ScoverageModule => p.scoverage.jar
         case p => p.jar
       }
       jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
-  // if you are also using
   ..
 }
 ----
@@ -412,6 +420,8 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 == Changelog
 
 === main
+
+* Improved output and error reporting and documentation
 
 === mill-integrationtest 0.3.1 - 2020-05-19
 
