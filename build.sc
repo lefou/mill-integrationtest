@@ -1,10 +1,11 @@
 // mill plugins
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:0.3.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:0.3.1-21-4e3046`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version:0.0.1`
 import scala.util.matching.Regex
 
 import de.tobiasroeser.mill.integrationtest.MillIntegrationTestModule
+import de.tobiasroeser.mill.integrationtest.TestInvocation
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
 import mill.contrib.scoverage.ScoverageModule
@@ -47,8 +48,9 @@ class IntegrationtestCross(millVersion: String) extends CrossScalaModule with Pu
   object test extends Tests with ScoverageTests {
     override def testFrameworks = Seq("org.scalatest.tools.Framework")
     override def ivyDeps = Agg(
-      ivy"org.scalatest::scalatest:3.2.0"
-    )
+      ivy"org.scalatest::scalatest:3.2.0",
+      ivy"org.scalatestplus::scalacheck-1-14:3.2.0.0"
+    ) ++ outer.compileIvyDeps()
   }
 
   override def javacOptions = Seq("-source", "1.8", "-target", "1.8", "-encoding", "UTF-8")
@@ -81,6 +83,15 @@ class ItestCross(millVersion: String) extends MillIntegrationTestModule {
   override def millSourcePath: Path = super.millSourcePath / os.up
   override def pluginsUnderTest: Seq[PublishModule] = Seq(integrationtest(itestMillVersions.toMap.apply(millVersion)))
   override def millTestVersion: T[String] = millVersion
+
+  override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = Seq(
+    PathRef(millSourcePath / "src" / "01-simple") -> Seq(
+      // test with debug print
+      TestInvocation.Targets(Seq("-d", "itest.test")),
+      // test default command
+      TestInvocation.Targets(Seq("itest"))
+    )
+  )
   override def testTargets: T[Seq[String]] = Seq("-d", "itest.test")
 
   /** Replaces the plugin jar with a scoverage-enhanced version of it. */

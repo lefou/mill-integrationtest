@@ -151,6 +151,7 @@ trait MillIntegrationTestModule extends TaskModule {
           val results: Seq[TestInvocationResult] = testCases.toMap.apply(test).map { invocation =>
             if (prevFailed) TestInvocationResult(invocation, TestResult.Skipped, Seq(), Seq(), None)
             else {
+              ctx.log.info(s"Invoking ${logLine}: ${invocation}")
               val result = invocation match {
                 case invocation @ TestInvocation.Targets(targets, expectedExitCode) =>
                   val outlog = os.temp(
