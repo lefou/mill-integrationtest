@@ -1,9 +1,9 @@
 // mill plugins under test
 import $exec.plugins
 import $ivy.`org.scoverage::scalac-scoverage-runtime:1.4.1`
-
 import de.tobiasroeser.mill.integrationtest._
 import mill._
+import mill.define.Target
 import mill.scalalib._
 import mill.scalalib.publish.{Developer, License, PomSettings, VersionControl}
 
@@ -34,5 +34,12 @@ object itest extends MillIntegrationTestModule {
   def millTestVersion = "0.7.3"
   def pluginsUnderTest = Seq(demoplugin)
   override def temporaryIvyModules: Seq[PublishModule] = Seq(demoutil)
+
+  override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T{ Seq(
+    PathRef(millSourcePath / "src" / "demo") -> Seq(
+      TestInvocation.Targets(Seq("verify")),
+      TestInvocation.Targets(Seq("-d", "fail"), 1)
+    )
+  )}
 
 }

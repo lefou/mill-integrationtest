@@ -19,3 +19,8 @@ def verify(): Command[Unit] = T.command {
   if(DemoUtil.demo != "DemoUtil") sys.error(s"Expected 'DemoUtil' but was '${DemoUtil.demo}'")
   ()
 }
+
+def fail(): Command[Unit] = T.command {
+  sys.error("Fail on purpose")
+  ()
+}

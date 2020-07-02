@@ -81,7 +81,7 @@ class ItestCross(millVersion: String) extends MillIntegrationTestModule {
   override def millSourcePath: Path = super.millSourcePath / os.up
   override def pluginsUnderTest: Seq[PublishModule] = Seq(integrationtest(itestMillVersions.toMap.apply(millVersion)))
   override def millTestVersion: T[String] = millVersion
-  override def testTargets: T[Seq[String]] = Seq("itest.test")
+  override def testTargets: T[Seq[String]] = Seq("-d", "itest.test")
 
   /** Replaces the plugin jar with a scoverage-enhanced version of it. */
   override def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =

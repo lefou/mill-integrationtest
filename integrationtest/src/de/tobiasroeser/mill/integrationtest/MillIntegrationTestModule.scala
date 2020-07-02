@@ -3,12 +3,12 @@ package de.tobiasroeser.mill.integrationtest
 import java.nio.file.attribute.PosixFilePermission
 
 import scala.util.Try
-
 import mill._
 import mill.api.{Ctx, Result}
 import mill.define.{Command, Sources, Target, Task, TaskModule}
 import mill.scalalib._
 import mill.scalalib.publish._
+import os.{PathRedirect, ProcessOutput}
 
 /**
  * Run Integration for Mill Plugin.
@@ -149,17 +149,27 @@ trait MillIntegrationTestModule extends TaskModule {
           var prevFailed: Boolean = false
 
           val results: Seq[TestInvocationResult] = testCases.toMap.apply(test).map { invocation =>
-            if (prevFailed) TestInvocationResult(invocation, TestResult.Skipped, Seq(), Seq())
+            if (prevFailed) TestInvocationResult(invocation, TestResult.Skipped, Seq(), Seq(), None)
             else {
               val result = invocation match {
                 case invocation @ TestInvocation.Targets(targets, expectedExitCode) =>
+                  val outlog = os.temp(
+                    dir = testPath,
+                    prefix = "out-",
+                    suffix = ".log",
+                    deleteOnExit = false
+                  )
+                  val pathRedirect = os.PathRedirect(outlog)
 
                   // run mill with test targets
                   // ENV=env mill -i testTargets
                   val result = os.proc(runScript, targets)
                     .call(
                       cwd = testPath,
-                      check = false
+                      check = false,
+                      stdout = pathRedirect,
+                      // stderr = pathRedirect,
+                      mergeErrIntoOut = true
                     )
 
                   val res = if (result.exitCode == expectedExitCode) {
@@ -168,7 +178,7 @@ trait MillIntegrationTestModule extends TaskModule {
                     TestResult.Failed
                   }
 
-                  TestInvocationResult(invocation, res, result.out.lines, result.err.lines)
+                  TestInvocationResult(invocation, res, result.out.lines, result.err.lines, Some(outlog))
               }
 
               // abort condition
@@ -178,8 +188,8 @@ trait MillIntegrationTestModule extends TaskModule {
           }
 
           val finalRes = results.foldLeft[TestResult](TestResult.Success) {
-            case (TestResult.Success, TestInvocationResult(_, TestResult.Success, _, _)) => TestResult.Success
-            case (TestResult.Success, TestInvocationResult(_, TestResult.Skipped, _, _)) => TestResult.Success
+            case (TestResult.Success, TestInvocationResult(_, TestResult.Success, _, _, _)) => TestResult.Success
+            case (TestResult.Success, TestInvocationResult(_, TestResult.Skipped, _, _, _)) => TestResult.Success
             case (TestResult.Skipped, _) => TestResult.Skipped
             case _ => TestResult.Failed
           }
@@ -199,18 +209,33 @@ trait MillIntegrationTestModule extends TaskModule {
     }
 
     val categorized = results.groupBy(_.result)
-    val succeeded = categorized.getOrElse(TestResult.Success, Seq())
+    val succeeded: Seq[TestCase] = categorized.getOrElse(TestResult.Success, Seq())
     val skipped = categorized.getOrElse(TestResult.Skipped, Seq())
-    val failed = categorized.getOrElse(TestResult.Failed, Seq())
+    val failed: Seq[TestCase] = categorized.getOrElse(TestResult.Failed, Seq())
 
-    ctx.log.debug(s"\nSucceeded integration tests: ${succeeded.size}\n${succeeded.mkString("- \n", "- \n", "")}")
-    ctx.log.debug(s"\nSkipped integration tests: ${skipped.size}\n${skipped.mkString("- \n", "- \n", "")}")
-    ctx.log.debug(s"\nFailed integration tests: ${failed.size}\n${failed.mkString("- \n", "- \n", "")}")
+    ctx.log.debug(s"\nSucceeded integration tests: ${succeeded.size}\n${succeeded.map(t => s"\n-  $t").mkString}")
+    ctx.log.debug(s"\nSkipped integration tests: ${skipped.size}\n${skipped.map(t => s"\n-  $t").mkString}")
+    ctx.log.debug(s"\nFailed integration tests: ${failed.size}\n${failed.map(t => s"\n-  $t").mkString}")
+
+    // Also print details for failed integration tests
+    ctx.log.debug(
+      s"\nDetails: ${
+        failed
+          .map(t => s"\nOutput of failed test: ${t.name}\n${
+            t
+              .invocations
+              .flatMap(i => i.logFile.map(f => i -> f))
+              .map(iandf => s"Invocation: ${iandf._1}\n${os.read(iandf._2)}")
+              .mkString
+          }")
+        .mkString
+      }"
+    )
 
     ctx.log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed")
 
     if (failed.nonEmpty) {
-      Result.Failure(s"${failed.size} integration test(s) failed:\n${failed.mkString("- \n", "- \n", "")}", Some(results))
+      Result.Failure(s"${failed.size} integration test(s) failed:\n${failed.map(t => s"\n-  $t").mkString}", Some(results))
     } else {
       Result.Success(results)
     }
@@ -313,23 +338,8 @@ trait MillIntegrationTestModule extends TaskModule {
    * You should not need to use or override this in you buildfile.
    */
   protected def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
-    Task.traverse(pluginsUnderTest) { plugin =>
-      new Task.Zipped(
-        plugin.jar,
-        new Task.Zipped(
-          plugin.sourceJar,
-          new Task.Zipped(
-            plugin.docJar,
-            new Task.Zipped(
-              plugin.pom,
-              new Task.Zipped(
-                plugin.ivy,
-                plugin.artifactMetadata
-              )
-            )
-          )
-        )
-      )
+    T.traverse(pluginsUnderTest) { p =>
+      p.jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
 
   /**
@@ -337,23 +347,8 @@ trait MillIntegrationTestModule extends TaskModule {
    * You should not need to use or override this in you buildfile.
    */
   protected def temporaryIvyModulesDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
-    Task.traverse(temporaryIvyModules) { plugin =>
-      new Task.Zipped(
-        plugin.jar,
-        new Task.Zipped(
-          plugin.sourceJar,
-          new Task.Zipped(
-            plugin.docJar,
-            new Task.Zipped(
-              plugin.pom,
-              new Task.Zipped(
-                plugin.ivy,
-                plugin.artifactMetadata
-              )
-            )
-          )
-        )
-      )
+    T.traverse(temporaryIvyModules) { p =>
+      p.jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
 
 }
