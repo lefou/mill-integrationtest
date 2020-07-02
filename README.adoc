@@ -2,6 +2,7 @@
 :version: 0.3.1
 :exampleMillVersion: 0.6.1
 :project-home: https://github.com/lefou/mill-integrationtest
+:scoverage-version: 1.4.1
 :toc:
 :toc-placement: preamble
 
@@ -228,34 +229,134 @@ def itest extends MillIntegrationTestModule {
 
 === Test with multiple mill versions, e.g. on a CI server
 
+
 Mill hasn't a stable API (yet) and there are no binary compatibility guarantees.
 So, it is a good idea to add all supported mill version to your CI setup.
 
-As a best practice, you can use the value of a `TEST_MILL_VERSION` system environment variable, if defined.
+The recommended way of supporting multiple mill versions is via mill's built-in support for cross building.
 
 [source,scala]
 ----
-object itest extends MillIntegrationTestModule {
-  def millTestVersion = T {
-    T.ctx().env.get("TEST_MILL_VERSION").filterNot(_.isEmpty).getOrElse(defaultMillVersion)
-  }
+val millItestVersions = Seq("0.7.3", "0.7.2", "0.7.1", "0.7.0")
+
+object itest extends Cross[ItestCross](millItestVersions: _*)
+class ItestCross(millItestVersion: String) extends MillIntegrationTestModule {
+  def millTestVersion = millItestVersion
+  // correct the source path (remove the extra level for the mill version)
+  override def millSourcePath = super.millSourcePath / os.up
   ..
 }
 ----
 
-To test with mill 0.6.0, run `TEST_MILL_VERSION=0.6.0 mill itest.test`.
+Now you can run a single integration test with
 
-If you use Travis-CI, a `.travis.yml` might look like this:
+[source,sh]
+mill itest[0.7.3].test
 
-[source,yaml]
+Or you can all integration test in parallel with
+
+[source,sh]
+mill -j 0 itest[_].test
+
+=== Cross-Testing a cross build mill-plugin
+
+In case you cross build your mill plugin to support multiple API versions,
+you need to parametrize your plugins under test.
+
+[source,scala]
 ----
-env:
-  - TEST_MILL_VERSION=0.6.0
-  - TEST_MILL_VERSION=0.6.1
+trait Deps {
+  def millVersion = "0.7.0"
+  def scalaVersion = "2.13.2"
 
-script:
-  - mill -i itest.test
+  val millMain = ivy"com.lihaoyi::mill-main:${millVersion}"
+  val millScalalib = ivy"com.lihaoyi::mill-scalalib:${millVersion}"
+}
+object Deps_0_7 extends Deps
+object Deps_0_6 extends Deps {
+  override def millVersion = "0.6.0"
+  override def scalaVersion = "2.12.10"
+}
+
+// The Mill API versions you want to support
+val millApiVersions: Map[String, Deps] = ListMap(
+  "0.7" -> Deps_0_7,
+  "0.6" -> Deps_0_6
+)
+
+// The Released Mill versions you want to use in your integration tests
+val millItestVersions = Seq(
+  "0.7.3", "0.7.2", "0.7.1", "0.7.0",
+  "0.6.3", "0.6.2", "0.6.1", "0.6.0"
+)
+
+// Your mill plugin
+object core extends Cross[CoreCross](millApiVersions.keysIterator.toSeq: _*)
+class CoreCross(val millApiVersion: String) extends CrossScalaModule with PublishModule {
+  def deps: Deps = millApiVersions(millApiVersion)
+  override def crossScalaVersion = deps.scalaVersion
+  override def compileIvyDeps = Seq(
+    deps.millMain,
+    deps.millScalalib
+  )
+  ..
+}
+
+// Your integration test for your mill plugin
+object itest extends Cross[ItestCross](millItestVersions: _*)
+class ItestCross(millItestVersion: String)  extends MillIntegrationTestModule {
+  val millApiVersion = millItestVersion.split("[.]").take(2).mkString(".")
+  override def millSourcePath: Path = super.millSourcePath / os.up
+  override def millTestVersion = millItestVersion
+  override def pluginsUnderTest = Seq(core(millApiVersion))
+  ..
+}
 ----
+
+Have a look at the `build.sc` of this mill plugin or how this is done in some other mill plugins:
+* https://github.com/lefou/mill-vcs-version
+* https://github.com/lefou/mill-osgi
+
+=== Collecting integration test coverage data with Scoverage
+
+To ensure you're using the scoverage-enhanced class files (which are configured to write coverage data into a directrory)
+you need to make sure to use the right JAR with the enhanced class files `<module>.scoverage.jar` instead of the `<module>.jar`.
+
+IMPORTANT: It's important to only use the scoverage-enhanced classes in test.
+If you would use them outside of your test case, loading them or executing their code would fail in almost all cases.
+
+[source,scala,subs="attributes"]
+----
+class core extends ScalaModule with PublishModule with ScoverageModule {
+  override def scoverageVersion = "{scoverage-version}"
+}
+
+object itest extends MillIntegrationTestModule {
+  override def pluginsUnderTest = Seq(core)
+  override def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
+    Target.traverse(pluginsUnderTest) { p =>
+      val jar = p match {
+        case p: ScoverageModule => p.scoverage.jar
+        case p => p.jar
+      }
+      jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
+    }
+  // if you are also using
+  ..
+}
+----
+
+Also, you need to make sure, that you load the required  scoverage runtime library into your mill under test.
+You can do this by adding the following `$ivy` import to your `build.sc` in each test case.
+
+[source,scala,subs="attributes"]
+import $ivy.`org.scoverage::scalac-scoverage-runtime:{scoverage-version}`
+
+Now, when you run the integration tests coverage data will be gathered and can be used to generate reports.
+
+[source,sh]
+mill -j 0 itest.test
+mill core.scoverage.htmlReport
 
 == Download
 
