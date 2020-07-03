@@ -219,7 +219,7 @@ trait MillIntegrationTestModule extends TaskModule {
     ctx.log.debug(s"\nFailed integration tests: ${failed.size}\n${failed.map(t => s"\n-  $t").mkString}")
 
     // Also print details for failed integration tests
-    ctx.log.error(
+    lazy val errMsg =
       s"\nDetails: ${
         failed
           .map(t => s"\nOutput of failed test: ${t.name}\n${
@@ -231,7 +231,9 @@ trait MillIntegrationTestModule extends TaskModule {
           }")
         .mkString
       }"
-    )
+
+    if(showFailedRuns()) ctx.log.error(errMsg)
+    else ctx.log.debug(errMsg)
 
     ctx.log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed")
 
@@ -351,6 +353,11 @@ trait MillIntegrationTestModule extends TaskModule {
     T.traverse(temporaryIvyModules) { p =>
       p.jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
+
+  /**
+   * If `true`, The run log of a failed test case will be shown.
+   */
+  def showFailedRuns: T[Boolean] = T{ true }
 
 }
 
