@@ -136,6 +136,11 @@ The `MillIntegrationTestModule` trait provides the following targets:
 
 * `def useCachedMillDownload: T[Boolean]` -
   If `true`, the downloaded mill version used for tests will be cached to the system cache dir (e.g. `~/.cache`).
+  Default: `true`.
+
+* `def showFailedRuns: T[Boolean]` -
+   If `true`, The run log of a failed test case will be shown.
+   Default: `true`.
 
 .Commands / Action Targets
 * `def test(): Command[Seq[TestCase]]` -
