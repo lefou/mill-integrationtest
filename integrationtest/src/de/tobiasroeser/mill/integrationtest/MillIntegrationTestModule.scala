@@ -219,7 +219,7 @@ trait MillIntegrationTestModule extends TaskModule {
     ctx.log.debug(s"\nFailed integration tests: ${failed.size}\n${failed.map(t => s"\n-  $t").mkString}")
 
     // Also print details for failed integration tests
-    ctx.log.debug(
+    ctx.log.error(
       s"\nDetails: ${
         failed
           .map(t => s"\nOutput of failed test: ${t.name}\n${
