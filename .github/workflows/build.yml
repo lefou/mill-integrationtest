@@ -22,9 +22,9 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
 
-      - run: ./millw -i -j 0 __.testCached
+      - run: ./millw -i -j 0 -d __.testCached
 
-      - run: ./millw -j 0 __.scoverage.xmlReport
+      - run: ./millw -i -j 0 __.scoverage.xmlReport
 
       - name: Upload scoverage reports to codecov.io
         uses: codecov/codecov-action@v1
