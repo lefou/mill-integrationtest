@@ -23,7 +23,7 @@ trait DemoModule extends ScalaModule with PublishModule {
 // Some demo plugin
 object demoplugin extends DemoModule {
   override def compileIvyDeps = Agg(
-    ivy"com.lihaoyi::mill-main:0.7.0"
+    ivy"com.lihaoyi::mill-main:0.7.4"
   )
 }
 
