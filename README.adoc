@@ -432,6 +432,10 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 == Changelog
 
+=== main
+
+* New option `showFailedRuns` to always show output of failed runs
+
 === mill-integrationtest 0.3.2 - 2020-07-03
 
 * Re-use mill download cache under `~/.cache`
