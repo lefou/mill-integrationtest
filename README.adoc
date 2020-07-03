@@ -1,5 +1,5 @@
 = mill-integrationtest - Integration test plugin for mill plugins
-:version: 0.3.2
+:version: 0.3.3
 :min-mill-version: 0.6.2
 :exampleMillVersion: {min-mill-version}
 :project-home: https://github.com/lefou/mill-integrationtest
@@ -433,6 +433,8 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 == Changelog
 
 === main
+
+=== mill-integrationtest 0.3.3 - 2020-07-03
 
 * New option `showFailedRuns` to always show output of failed runs
 
