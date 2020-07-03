@@ -429,10 +429,11 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 === mill-integrationtest 0.3.2 - 2020-07-03
 
+* Re-use mill download cache under `~/.cache`
+* Added integration tests
 * Improved output and error reporting
 * Integration test runs now will be written to a dedicated log file
 * When mill it run in debug mode (`-d`), the complete log of a failed run will be printed after the test summary
-* Enhanced test coverage
 * More documentation
 
 
