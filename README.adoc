@@ -1,8 +1,10 @@
 = mill-integrationtest - Integration test plugin for mill plugins
-:version: 0.3.1
-:exampleMillVersion: 0.6.1
+:version: 0.3.2
+:min-mill-version: 0.6.2
+:exampleMillVersion: {min-mill-version}
 :project-home: https://github.com/lefou/mill-integrationtest
 :scoverage-version: 1.4.1
+:munit-version: 0.7.7
 :toc:
 :toc-placement: preamble
 
@@ -85,6 +87,8 @@ import $ivy.`org.example:mill-demo_2.12:0.1.0-SNAPSHOT`
 ----
 
 == Configuration and Targets
+
+Mill {min-mill-version} or newer is required. See also <<Version Compatibility Matrix>>.
 
 The `MillIntegrationTestModule` trait provides the following targets:
 
@@ -194,11 +198,14 @@ def testInvocations = T{
 
 === Better prints context of failed targets
 
-Use `munit`'s Assertions when defining your test targets
-[source,scala]
+Many test libraries provide nice asserting APIs which produce helpful error messages.
+
+For example, use `munit`'s Assertions when defining your test targets
+
+[source,scala,subs="attributes"]
 ----
 // itest/src/project1/build.sc
-import $ivy.`org.scalameta::munit:0.7.7`, munit.Assertions._
+import $ivy.`org.scalameta::munit:{munit-version}`, munit.Assertions._
 def verify() = T.command {
   assert(None.isDefined)
   val fixedScala = read(os.pwd / "foo" / "src" / "Fix.scala")
@@ -233,7 +240,7 @@ def itest extends MillIntegrationTestModule {
 Mill hasn't a stable API (yet) and there are no binary compatibility guarantees.
 So, it is a good idea to add all supported mill version to your CI setup.
 
-The recommended way of supporting multiple mill versions is via mill's built-in support for cross building.
+The recommended way of supporting multiple mill versions is via mill's built-in support for cross building (`mill.define.Cross`).
 
 [source,scala]
 ----
@@ -387,6 +394,7 @@ The following table shows a matrix of compatible mill and mill-integrationtest v
 [options="header"]
 |===
 | mill-integrationtest | mill
+| 0.3.2 | 0.6.2 - 0.7.3
 | 0.3.1 | 0.6.2 - 0.7.3
 | 0.3.0 | 0.6.2 - 0.7.3
 | 0.2.1 | 0.6.0 - 0.6.3
@@ -419,9 +427,14 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 == Changelog
 
-=== main
+=== mill-integrationtest 0.3.2 - 2020-07-03
 
-* Improved output and error reporting and documentation
+* Improved output and error reporting
+* Integration test runs now will be written to a dedicated log file
+* When mill it run in debug mode (`-d`), the complete log of a failed run will be printed after the test summary
+* Enhanced test coverage
+* More documentation
+
 
 === mill-integrationtest 0.3.1 - 2020-05-19
 
