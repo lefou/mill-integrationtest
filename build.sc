@@ -25,6 +25,7 @@ val millApiCrossVersions = Seq(
 
 // Tuple: Mill version -> Mill API version
 val itestMillVersions = Seq(
+  "0.7.4" -> "0.7.0",
   "0.7.3" -> "0.7.0",
   "0.7.2" -> "0.7.0",
   "0.7.1" -> "0.7.0",
