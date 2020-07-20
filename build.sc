@@ -39,7 +39,7 @@ class IntegrationtestCross(millVersion: String) extends CrossScalaModule with Pu
   override def artifactName = "de.tobiasroeser.mill.integrationtest"
 
   override def compileIvyDeps = Agg(
-    ivy"com.lihaoyi::os-lib:0.6.3",
+    ivy"com.lihaoyi::os-lib:0.7.1",
     ivy"com.lihaoyi::mill-main:${millVersion}",
     ivy"com.lihaoyi::mill-scalalib:${millVersion}"
   )
