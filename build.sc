@@ -49,8 +49,8 @@ class IntegrationtestCross(millVersion: String) extends CrossScalaModule with Pu
   object test extends Tests with ScoverageTests {
     override def testFrameworks = Seq("org.scalatest.tools.Framework")
     override def ivyDeps = Agg(
-      ivy"org.scalatest::scalatest:3.2.2",
-      ivy"org.scalatestplus::scalacheck-1-14:3.2.2.0"
+      ivy"org.scalatest::scalatest:3.2.3",
+      ivy"org.scalatestplus::scalacheck-1-14:3.2.3.0"
     ) ++ outer.compileIvyDeps()
   }
 
