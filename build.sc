@@ -44,7 +44,7 @@ class IntegrationtestCross(millVersion: String) extends CrossScalaModule with Pu
     ivy"com.lihaoyi::mill-scalalib:${millVersion}"
   )
 
-  override def scoverageVersion = "1.4.1"
+  override def scoverageVersion = "1.4.2"
 
   object test extends Tests with ScoverageTests {
     override def testFrameworks = Seq("org.scalatest.tools.Framework")
