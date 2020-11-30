@@ -461,7 +461,7 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 == Changelog
 
-=== main
+=== mill-integrationtest 0.4.0 - 2020-11-30
 
 * Added support for mill 0.9.3 while maintaining backward-compatible versions down to mill 0.6.2
 * Introduce a new artifact name suffix (`_mill0.9` for mil 0.9.3) to support multiple mill API versions.
