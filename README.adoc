@@ -1,7 +1,10 @@
 = mill-integrationtest - Integration test plugin for mill plugins
 :version: 0.3.3
+:mill-platform: 0.9
+:scala-platform: 2.13
+:mill-version: 0.9.3
 :min-mill-version: 0.6.2
-:exampleMillVersion: {min-mill-version}
+:exampleMillVersion: 0.9.3
 :project-home: https://github.com/lefou/mill-integrationtest
 :scoverage-version: 1.4.1
 :munit-version: 0.7.7
@@ -17,7 +20,7 @@ Integration testing for mill plugins.
 
 == Quickstart
 
-We assume, you have a mill plugin named `mill-demo`
+Here we assume, you use mill {mill-version} and develop a mill plugin named `demo`
 
 [source,scala]
 ----
@@ -28,12 +31,17 @@ object demo extends ScalaModule with PublishModule {
 }
 ----
 
-Add an new test sub-project, e.g. `itest`.
+First you need to add a new test module, e.g. `itest`.
 
 [source,scala,subs="verbatim,attributes"]
 ----
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:{version}`
+// build.sc
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill{mill-platform}:{version}`
 import de.tobiasroeser.mill.integrationtest._
+
+object demo extends ScalaModule with PublishModule {
+  // ...
+}
 
 object itest extends MillIntegrationTestModule {
 
@@ -43,6 +51,9 @@ object itest extends MillIntegrationTestModule {
 
 }
 ----
+
+Your test cases will be located in the source directory of the newly added `itest` project.
+The idea is that each sub-directory represents a separate mill project representing a test case.
 
 Your project should now look similar to this:
 
@@ -66,8 +77,9 @@ the plugins publishes all modules referenced under `pluginsUnderTest` and `tempo
 just before the test is executed.
 The mill version used in the integration test then uses that temporary ivy repository.
 
-Instead of referring to your plugin with `import $ivy.'your::plugin:version'`,
-you can use the following line instead, which ensures you will use the correct locally build plugins.
+Because you are using your locally developed plugin,
+instead of referring to your plugin with `import $ivy.'your::plugin:version'`,
+you should use the following line, which ensures that you use the correct locally build plugins.
 
 [source,scala]
 ----
@@ -78,6 +90,7 @@ import $exec.plugins
 Effectively, at execution time, this line gets replaced by the content of `plugins.sc`,
 a file which was generated just before the test started to execute.
 It will `$ivy` import all dependencies you listed in `pluginsUnderTest`.
+(If you want to find out how this works, read https://ammonite.io/#import$exec[this])
 
 .Example for a generated `plugins.sc`
 [source,scala]
@@ -326,7 +339,7 @@ class ItestCross(millItestVersion: String)  extends MillIntegrationTestModule {
 ----
 
 Have a look at the `build.sc` of this mill plugin to see how this is done.
-Here are also two other mill plugins that use this technique:
+Here are also link to two other mill plugins that uses this technique (at the time of writing this):
 
 * https://github.com/lefou/mill-vcs-version
 * https://github.com/lefou/mill-kotlin
@@ -381,7 +394,20 @@ mill core.scoverage.htmlReport
 == Download
 
 You can download binary releases from
-https://search.maven.org/artifact/de.tototec/de.tobiasroeser.mill.integrationtest_2.13[Maven Central].
+https://search.maven.org/artifact/de.tototec/de.tobiasroeser.mill.integrationtest_mill{mill-platform}_{scala-platform}[Maven Central].
+
+Newer versions of this plugin (after version 0.3.3) have a _mill platform suffix_ in the artifact name.
+Please make sure to use the correct platform suffix matching your used mill version.
+
+.Mill Platform suffix
+[options="header"]
+|===
+| mill version | mill platform | scala binary version | example
+| 0.9.0 | 0.9 | 2.13 | import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:{version}`
+| 0.7.0 - 0.8.0 | 0.7 | 2.13 | import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.7:{version}`
+| 0.6.2 | 0.6.2 | 2.12 | import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.6.2_2.12:{version}`
+|===
+
 
 == License
 
@@ -395,14 +421,15 @@ Hence, not all mill-integrationtest versions work with every mill version.
 
 The following table shows a matrix of compatible mill and mill-integrationtest versions.
 
+
 .Version Compatibility Matrix
 [options="header"]
 |===
 | mill-integrationtest | mill
-| 0.3.3 | 0.6.2 - 0.7.4
-| 0.3.2 | 0.6.2 - 0.7.4
-| 0.3.1 | 0.6.2 - 0.7.4
-| 0.3.0 | 0.6.2 - 0.7.4
+| 0.3.3 | 0.6.2 - 0.8.0
+| 0.3.2 | 0.6.2 - 0.8.0
+| 0.3.1 | 0.6.2 - 0.8.0
+| 0.3.0 | 0.6.2 - 0.8.0
 | 0.2.1 | 0.6.0 - 0.6.3
 | 0.2.0 | 0.5.7
 | 0.1.2 | 0.5.7
@@ -434,6 +461,9 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 == Changelog
 
 === main
+
+* Added support for mill 0.9.3 while maintaining backward-compatible versions down to mill 0.6.2
+* Introduce a new artifact name suffix (`_mill0.9` for mil 0.9.3) to support multiple mill API versions.
 
 === mill-integrationtest 0.3.3 - 2020-07-03
 
