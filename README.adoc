@@ -1,5 +1,5 @@
 = mill-integrationtest - Integration test plugin for mill plugins
-:version: 0.3.3
+:version: 0.4.0
 :mill-platform: 0.9
 :scala-platform: 2.13
 :mill-version: 0.9.3
@@ -404,7 +404,7 @@ Please make sure to use the correct platform suffix matching your used mill vers
 |===
 | mill version | mill platform | suffix | example
 | 0.9.0 | 0.9 | `_mill0.9` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:{version}````
-| 0.7.0 - 0.8.0 | 0.7 | `_mill0.8` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.7:{version}````
+| 0.7.0 - 0.8.0 | 0.7 | `_mill0.7` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.7:{version}````
 | 0.6.2 | 0.6.2 | `_mill0.6.2` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.6.2_2.12:{version}````
 |===
 
@@ -420,12 +420,13 @@ Mill is still in active development, and has no stable API yet.
 Hence, not all mill-integrationtest versions work with every mill version.
 
 The following table shows a matrix of compatible mill and mill-integrationtest versions.
-
+Newer version of mill may or may not work. (Feel free to update this page via a pull request, thanks.)
 
 .Version Compatibility Matrix
 [options="header"]
 |===
 | mill-integrationtest | mill
+| 0.4.0 | 0.6.2 - 0.9.3
 | 0.3.3 | 0.6.2 - 0.8.0
 | 0.3.2 | 0.6.2 - 0.8.0
 | 0.3.1 | 0.6.2 - 0.8.0
@@ -464,6 +465,7 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 * Added support for mill 0.9.3 while maintaining backward-compatible versions down to mill 0.6.2
 * Introduce a new artifact name suffix (`_mill0.9` for mil 0.9.3) to support multiple mill API versions.
+* Various version bumps: scalatest 3.2.3, scalafmt 2.7.5, scoverage 1.4.2
 
 === mill-integrationtest 0.3.3 - 2020-07-03
 
