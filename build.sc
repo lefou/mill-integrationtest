@@ -1,6 +1,6 @@
 // mill plugins
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:0.3.2`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:0.3.3`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version:0.0.1`
 import scala.util.matching.Regex
 
@@ -19,12 +19,14 @@ val rtMillVersion = build.version
 
 // Tuple: Mill version -> Scala version
 val millApiCrossVersions = Seq(
-  "0.7.0" -> "2.13.2",
+  "0.9.0" -> "2.13.4",
+  "0.7.0" -> "2.13.4",
   "0.6.2" -> "2.12.11"
 )
 
 // Tuple: Mill version -> Mill API version
 val itestMillVersions = Seq(
+  "0.9.3" -> "0.9.0",
   "0.7.4" -> "0.7.0",
   "0.7.3" -> "0.7.0",
   "0.7.2" -> "0.7.0",
@@ -36,7 +38,7 @@ object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.
 class IntegrationtestCross(millVersion: String) extends CrossScalaModule with PublishModule with ScoverageModule { outer =>
   override def publishVersion = VcsVersion.vcsState().format()
   override def crossScalaVersion = millApiCrossVersions.toMap.apply(millVersion)
-  override def artifactName = "de.tobiasroeser.mill.integrationtest"
+  override def artifactName = "de.tobiasroeser.mill.integrationtest" + (if (millVersion.startsWith("0.7")) "_mill0.7" else "")
 
   override def compileIvyDeps = Agg(
     ivy"com.lihaoyi::os-lib:0.6.3",
