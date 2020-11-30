@@ -18,7 +18,7 @@ trait MillIntegrationTestModule extends TaskModule {
   import MillIntegrationTestModule._
 
   /** Denotes the command which is called when no target in given on the commandline. */
-  def defaultCommandName = "test"
+  def defaultCommandName() = "test"
 
   /**
    * Locations where integration tests are located.
