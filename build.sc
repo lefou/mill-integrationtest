@@ -1,6 +1,6 @@
 // mill plugins
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:0.3.2`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:0.3.3`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version:0.0.1`
 import scala.util.matching.Regex
 
@@ -17,31 +17,29 @@ import os.Path
 val baseDir = build.millSourcePath
 val rtMillVersion = build.version
 
-// Tuple: Mill version -> Scala version
+case class CrossConfig(millPlatform: String, minMillVersion: String, scalaVersion: String, testWithMill: Seq[String])
+
+// Tuple: Mill version -> CrossConfig
 val millApiCrossVersions = Seq(
-  "0.7.0" -> "2.13.2",
-  "0.6.2" -> "2.12.11"
+  CrossConfig("0.9", "0.9.3", "2.13.4", testWithMill = Seq("0.9.3")),
+  CrossConfig("0.7", "0.7.0", "2.13.4", testWithMill = Seq("0.8.0", "0.7.4", "0.7.3", "0.7.2", "0.7.1")),
+  CrossConfig("0.6.2", "0.6.2", "2.12.11", testWithMill = Seq("0.6.2"))
 )
 
-// Tuple: Mill version -> Mill API version
-val itestMillVersions = Seq(
-  "0.7.4" -> "0.7.0",
-  "0.7.3" -> "0.7.0",
-  "0.7.2" -> "0.7.0",
-  "0.7.1" -> "0.7.0",
-  "0.6.2" -> "0.6.2"
-)
+val matrix = millApiCrossVersions.map(x => x.millPlatform -> x).toMap
 
-object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.map(_._1): _*)
-class IntegrationtestCross(millVersion: String) extends CrossScalaModule with PublishModule with ScoverageModule { outer =>
+object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.map(_.millPlatform): _*)
+class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with PublishModule with ScoverageModule { outer =>
+  private val crossConfig = matrix(millPlatfrom)
   override def publishVersion = VcsVersion.vcsState().format()
-  override def crossScalaVersion = millApiCrossVersions.toMap.apply(millVersion)
-  override def artifactName = "de.tobiasroeser.mill.integrationtest"
+  override def crossScalaVersion = crossConfig.scalaVersion
+  override def artifactSuffix = s"_mill${crossConfig.millPlatform}_${artifactScalaVersion()}"
+  override def artifactName = s"de.tobiasroeser.mill.integrationtest"
 
   override def compileIvyDeps = Agg(
     ivy"com.lihaoyi::os-lib:0.6.3",
-    ivy"com.lihaoyi::mill-main:${millVersion}",
-    ivy"com.lihaoyi::mill-scalalib:${millVersion}"
+    ivy"com.lihaoyi::mill-main:${crossConfig.minMillVersion}",
+    ivy"com.lihaoyi::mill-scalalib:${crossConfig.minMillVersion}"
   )
 
   override def scoverageVersion = "1.4.2"
@@ -75,14 +73,18 @@ class IntegrationtestCross(millVersion: String) extends CrossScalaModule with Pu
     )
   }
 
-  override def skipIdea: Boolean = millVersion != millApiCrossVersions.head._1
+  override def skipIdea: Boolean = crossConfig != millApiCrossVersions.head
 }
+
+// Tuple: Mill version -> CrossConfig
+val itestMillVersions = millApiCrossVersions.flatMap(x => x.testWithMill.map(_ -> x))
 
 object itest extends Cross[ItestCross](itestMillVersions.map(_._1): _*)
 class ItestCross(millVersion: String) extends MillIntegrationTestModule {
   // correct cross level
+  private val crossConfig = itestMillVersions.toMap.apply(millVersion)
   override def millSourcePath: Path = super.millSourcePath / os.up
-  override def pluginsUnderTest: Seq[PublishModule] = Seq(integrationtest(itestMillVersions.toMap.apply(millVersion)))
+  override def pluginsUnderTest: Seq[PublishModule] = Seq(integrationtest(crossConfig.millPlatform))
   override def millTestVersion: T[String] = millVersion
 
   override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = Seq(
