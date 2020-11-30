@@ -402,10 +402,10 @@ Please make sure to use the correct platform suffix matching your used mill vers
 .Mill Platform suffix
 [options="header"]
 |===
-| mill version | mill platform | scala binary version | example
-| 0.9.0 | 0.9 | 2.13 | import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:{version}`
-| 0.7.0 - 0.8.0 | 0.7 | 2.13 | import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.7:{version}`
-| 0.6.2 | 0.6.2 | 2.12 | import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.6.2_2.12:{version}`
+| mill version | mill platform | suffix | example
+| 0.9.0 | 0.9 | `_mill0.9` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:{version}````
+| 0.7.0 - 0.8.0 | 0.7 | `_mill0.8` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.7:{version}````
+| 0.6.2 | 0.6.2 | `_mill0.6.2` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.6.2_2.12:{version}````
 |===
 
 
