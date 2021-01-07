@@ -220,7 +220,7 @@ trait MillIntegrationTestModule extends TaskModule {
 
     // Also print details for failed integration tests
     lazy val errMsg =
-      s"\nDetails: ${
+      s"\nDetails for ${failed.size} failed tests: ${
         failed
           .map(t => s"\nOutput of failed test: ${t.name}\n${
             t
@@ -228,12 +228,14 @@ trait MillIntegrationTestModule extends TaskModule {
               .flatMap(i => i.logFile.map(f => i -> f))
               .map(iandf => s"Invocation: ${iandf._1}\n${os.read(iandf._2)}")
               .mkString
-          }")
+          }\nEnd of output of failed test: ${t.name}\n")
         .mkString
       }"
 
-    if(showFailedRuns()) ctx.log.error(errMsg)
-    else ctx.log.debug(errMsg)
+    if(failed.nonEmpty) {
+      if(showFailedRuns()) ctx.log.errorStream.println(errMsg)
+      else ctx.log.debug(errMsg)
+    }
 
     ctx.log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed")
 
