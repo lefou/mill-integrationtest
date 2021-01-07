@@ -219,22 +219,21 @@ trait MillIntegrationTestModule extends TaskModule {
     ctx.log.debug(s"\nFailed integration tests: ${failed.size}\n${failed.map(t => s"\n-  $t").mkString}")
 
     // Also print details for failed integration tests
-    lazy val errMsg =
-      s"\nDetails for ${failed.size} failed tests: ${
-        failed
-          .map(t => s"\nOutput of failed test: ${t.name}\n${
-            t
-              .invocations
-              .flatMap(i => i.logFile.map(f => i -> f))
-              .map(iandf => s"Invocation: ${iandf._1}\n${os.read(iandf._2)}")
-              .mkString
-          }\nEnd of output of failed test: ${t.name}\n")
-        .mkString
-      }"
+    if(failed.nonEmpty && showFailedRuns()) {
+      val errMsg =
+        s"\nDetails for ${failed.size} failed tests: ${
+          failed
+            .map(t => s"\nOutput of failed test: ${t.name}\n${
+              t
+                .invocations
+                .flatMap(i => i.logFile.map(f => i -> f))
+                .map(iandf => s"Invocation: ${iandf._1}\n${os.read(iandf._2)}")
+                .mkString
+            }\nEnd of output of failed test: ${t.name}\n")
+          .mkString
+        }"
 
-    if(failed.nonEmpty) {
-      if(showFailedRuns()) ctx.log.errorStream.println(errMsg)
-      else ctx.log.debug(errMsg)
+      ctx.log.errorStream.println(errMsg)
     }
 
     ctx.log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed")
