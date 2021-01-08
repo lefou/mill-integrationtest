@@ -3,6 +3,8 @@ package de.tobiasroeser.mill.integrationtest
 import java.nio.file.attribute.PosixFilePermission
 
 import scala.util.Try
+import scala.util.control.NonFatal
+
 import mill._
 import mill.api.{Ctx, Result}
 import mill.define.{Command, Sources, Target, Task, TaskModule}
@@ -219,21 +221,25 @@ trait MillIntegrationTestModule extends TaskModule {
     ctx.log.debug(s"\nFailed integration tests: ${failed.size}\n${failed.map(t => s"\n-  $t").mkString}")
 
     // Also print details for failed integration tests
-    if(failed.nonEmpty && showFailedRuns()) {
-      val errMsg =
-        s"\nDetails for ${failed.size} failed tests: ${
-          failed
-            .map(t => s"\nOutput of failed test: ${t.name}\n${
-              t
-                .invocations
-                .flatMap(i => i.logFile.map(f => i -> f))
-                .map(iandf => s"Invocation: ${iandf._1}\n${os.read(iandf._2)}")
-                .mkString
-            }\nEnd of output of failed test: ${t.name}\n")
-          .mkString
-        }"
+    try {
+      if (failed.nonEmpty && showFailedRuns()) {
+        val errMsg =
+          s"\nDetails for ${failed.size} failed tests: ${
+            failed
+              .map(t => s"\nOutput of failed test: ${t.name}\n${
+                t
+                  .invocations
+                  .flatMap(i => i.logFile.map(f => i -> f))
+                  .map(iandf => s"---------- Output for Invocation: ${iandf._1}\n${os.read(iandf._2)}\n---------- End of output\n")
+                  .mkString
+              }")
+              .mkString
+          }"
 
-      ctx.log.errorStream.println(errMsg)
+        ctx.log.errorStream.println(errMsg)
+      }
+    } catch {
+      case NonFatal(e) => ctx.log.error("Could not show logfile content for failed tests")
     }
 
     ctx.log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed")
