@@ -2,14 +2,14 @@
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
 import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest:0.3.3`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version:0.0.1`
+
 import scala.util.matching.Regex
 
-import de.tobiasroeser.mill.integrationtest.MillIntegrationTestModule
-import de.tobiasroeser.mill.integrationtest.TestInvocation
+import de.tobiasroeser.mill.integrationtest.{MillIntegrationTestModule, TestCase, TestInvocation}
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
 import mill.contrib.scoverage.ScoverageModule
-import mill.define.{Sources, Target, Task}
+import mill.define.{Command, Sources, Target, Task, TaskModule}
 import mill.scalalib._
 import mill.scalalib.publish._
 import os.Path
@@ -79,7 +79,12 @@ class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with P
 // Tuple: Mill version -> CrossConfig
 val itestMillVersions = millApiCrossVersions.flatMap(x => x.testWithMill.map(_ -> x))
 
-object itest extends Cross[ItestCross](itestMillVersions.map(_._1): _*)
+object itest extends Cross[ItestCross](itestMillVersions.map(_._1): _*) with TaskModule {
+  override def defaultCommandName(): String = "test"
+  def testCached: T[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).testCached
+  def test(args: String*): Command[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).test()
+}
+
 class ItestCross(millVersion: String) extends MillIntegrationTestModule {
   // correct cross level
   private val crossConfig = itestMillVersions.toMap.apply(millVersion)
