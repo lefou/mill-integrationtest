@@ -127,14 +127,14 @@ trait MillIntegrationTestModule extends TaskModule {
             if(scala.util.Properties.isWin) (
               testPath / "mill.bat",
               s"""set JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
-                 |"${millExe.toIO.getAbsolutePath()}" -i %*
+                 |"${millExe.toIO.getAbsolutePath()}" -i --color false %*
                  |""".stripMargin,
                null
             ) else (
               testPath / "mill",
               s"""#!/usr/bin/env sh
                  |export JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
-                 |exec ${millExe.toIO.getAbsolutePath()} -i "$$@"
+                 |exec ${millExe.toIO.getAbsolutePath()} -i --color false "$$@"
                  |""".stripMargin,
               os.PermSet(0) +
                 PosixFilePermission.OWNER_READ +
@@ -221,8 +221,8 @@ trait MillIntegrationTestModule extends TaskModule {
     ctx.log.debug(s"\nFailed integration tests: ${failed.size}\n${failed.map(t => s"\n-  $t").mkString}")
 
     // Also print details for failed integration tests
-    try {
-      if (failed.nonEmpty && showFailedRuns()) {
+    if (failed.nonEmpty && showFailedRuns()) {
+      try {
         val errMsg =
           s"\nDetails for ${failed.size} failed tests: ${
             failed
@@ -235,11 +235,10 @@ trait MillIntegrationTestModule extends TaskModule {
               }")
               .mkString
           }"
-
-        ctx.log.errorStream.println(errMsg)
-      }
+      ctx.log.errorStream.println(errMsg)
     } catch {
-      case NonFatal(e) => ctx.log.error("Could not show logfile content for failed tests")
+      case NonFatal(e) => ctx.log.error(s"Could not show logfile content for failed tests. ${e.getMessage()}")
+    }
     }
 
     ctx.log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed")
