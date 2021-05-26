@@ -1,5 +1,6 @@
 package de.tobiasroeser.mill.integrationtest
 
+import java.nio.file.{CopyOption, LinkOption, StandardCopyOption}
 import java.nio.file.attribute.PosixFilePermission
 
 import scala.util.Try
@@ -26,7 +27,13 @@ trait MillIntegrationTestModule extends TaskModule {
    * Locations where integration tests are located.
    * Each integration test is a sub-directory, containing a complete test mill project.
    */
-  def sources: Sources = T.sources(millSourcePath / 'src)
+  def sources: Sources = T.sources(millSourcePath / "src")
+
+  /**
+   * Shared test resources, will be copied as-is into each test case working directory before the test in run.
+   */
+  def perTestResources: Sources = T.sources(millSourcePath / "src-shared")
+
 
   /**
    * The directories each representing a mill test case.
@@ -116,6 +123,11 @@ trait MillIntegrationTestModule extends TaskModule {
 
           // copy test project here
           os.copy(from = test.path, to = testPath, createFolders = true)
+
+          // copying per-test-resources
+          perTestResources().iterator.map(_.path).filter(os.exists).foreach { src =>
+            copyWithMerge(from = src, to = testPath, createFolders = true, mergeFolders = true)
+          }
 
           // Write the plugins.sc file
           os.write(testPath / "plugins.sc", importFileContents)
@@ -376,6 +388,45 @@ object MillIntegrationTestModule {
       .split("[.]", 4)
       .take(3)
       .map(_.toInt)
+  }
+
+  // partial copy of os.copy version 0.7.7
+  private def copyWithMerge(
+                     from: os.Path,
+                     to: os.Path,
+                     followLinks: Boolean = true,
+                     replaceExisting: Boolean = false,
+                     copyAttributes: Boolean = false,
+                     createFolders: Boolean = false,
+                     mergeFolders: Boolean = false
+                   ): Unit = {
+    if (createFolders) os.makeDir.all(to / os.up)
+    val opts1 =
+      if (followLinks) Array[CopyOption]()
+      else Array[CopyOption](LinkOption.NOFOLLOW_LINKS)
+    val opts2 =
+      if (replaceExisting) Array[CopyOption](StandardCopyOption.REPLACE_EXISTING)
+      else Array[CopyOption]()
+    val opts3 =
+      if (copyAttributes) Array[CopyOption](StandardCopyOption.COPY_ATTRIBUTES)
+      else Array[CopyOption]()
+    require(
+      !to.startsWith(from),
+      s"Can't copy a directory into itself: $to is inside $from"
+    )
+
+    def copyOne(p: os.Path): java.nio.file.Path = {
+      val target = to / p.relativeTo(from)
+      if (mergeFolders && os.isDir(p, followLinks) && os.isDir(target, followLinks)) {
+        // nothing to do
+        target.wrapped
+      } else {
+        java.nio.file.Files.copy(p.wrapped, target.wrapped, opts1 ++ opts2 ++ opts3: _*)
+      }
+    }
+
+    copyOne(from)
+    if (os.stat(from, followLinks = followLinks).isDir) os.walk(from).map(copyOne)
   }
 
 }
