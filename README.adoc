@@ -1,10 +1,9 @@
 = mill-integrationtest - Integration test plugin for mill plugins
-:version: 0.4.0
+:version: 0.4.1
 :mill-platform: 0.9
 :scala-platform: 2.13
-:mill-version: 0.9.3
 :min-mill-version: 0.6.2
-:exampleMillVersion: 0.9.3
+:example-mill-version: 0.9.8
 :project-home: https://github.com/lefou/mill-integrationtest
 :scoverage-version: 1.4.1
 :munit-version: 0.7.7
@@ -20,7 +19,7 @@ Integration testing for mill plugins.
 
 == Quickstart
 
-Here we assume, you use mill {mill-version} and develop a mill plugin named `demo`
+Here we assume, you use mill {example-mill-version} and develop a mill plugin named `demo`
 
 [source,scala]
 ----
@@ -45,7 +44,7 @@ object demo extends ScalaModule with PublishModule {
 
 object itest extends MillIntegrationTestModule {
 
-  def millTestVersion = "{exampleMillVersion}"
+  def millTestVersion = "{example-mill-version}"
 
   def pluginsUnderTest = Seq(demo)
 
@@ -127,6 +126,10 @@ The `MillIntegrationTestModule` trait provides the following targets:
 * `def sources: Sources` -
   Locations where integration tests are located.
   Each integration test is a sub-directory, containing a complete test mill project.
+
+* `perTestResources: Sources` -
+  Shared test resources, will be copied as-is into each test case working directory before the test is run.
+  You can also generate these, making some test setups easier (e.g. including additional classpath resources).
 
 * `def testCases: Target[Seq[PathRef]]` -
   The directories each representing a mill test case.
@@ -426,6 +429,7 @@ Newer version of mill may or may not work. (Feel free to update this page via a 
 [options="header"]
 |===
 | mill-integrationtest | mill
+| 0.4.1 | 0.6.2 - 0.9.8
 | 0.4.0 | 0.6.2 - 0.9.8
 | 0.3.3 | 0.6.2 - 0.8.0
 | 0.3.2 | 0.6.2 - 0.8.0
@@ -460,6 +464,12 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 
 == Changelog
+
+=== mill-integrationtest 0.4.1 - 2021-06-09
+
+* Improved output, esp. in error case
+* Added new `perTestResources` target
+* Work around binary compatibility issues with mill 0.9.7
 
 === mill-integrationtest 0.4.0 - 2020-11-30
 
