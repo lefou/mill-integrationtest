@@ -122,7 +122,7 @@ trait MillIntegrationTestModule extends TaskModule {
           os.remove.all(testPath)
 
           // copy test project here
-          os.copy(from = test.path, to = testPath, createFolders = true)
+          copyWithMerge(from = test.path, to = testPath, createFolders = true)
 
           // copying per-test-resources
           perTestResources().iterator.map(_.path).filter(os.exists).foreach { src =>
@@ -391,6 +391,8 @@ object MillIntegrationTestModule {
   }
 
   // partial copy of os.copy version 0.7.7
+  // also os.copy in os-lib 0.7.5 to 0.7.7 has broken bin compat
+  // making mill 0.9.7 incompatible
   private def copyWithMerge(
                      from: os.Path,
                      to: os.Path,
