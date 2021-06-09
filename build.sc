@@ -21,7 +21,7 @@ case class CrossConfig(millPlatform: String, minMillVersion: String, scalaVersio
 
 // Tuple: Mill version -> CrossConfig
 val millApiCrossVersions = Seq(
-  CrossConfig("0.9", "0.9.3", "2.13.4", testWithMill = Seq("0.9.8", "0.9.6", "0.9.5", "0.9.4", "0.9.3")),
+  CrossConfig("0.9", "0.9.3", "2.13.4", testWithMill = Seq("0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", "0.9.3")),
   CrossConfig("0.7", "0.7.0", "2.13.4", testWithMill = Seq("0.8.0", "0.7.4", "0.7.3", "0.7.2", "0.7.1")),
   CrossConfig("0.6.2", "0.6.2", "2.12.11", testWithMill = Seq("0.6.2"))
 )
