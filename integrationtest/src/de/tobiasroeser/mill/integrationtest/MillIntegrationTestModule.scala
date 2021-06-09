@@ -77,7 +77,7 @@ trait MillIntegrationTestModule extends TaskModule {
     val ivyPath = ctx.dest / "ivyRepo"
 
     ctx.log.debug("Publishing plugins under test into test ivy repo")
-    val publisher = new LocalIvyPublisher(ivyPath / 'local)
+    val publisher = new LocalIvyPublisher(ivyPath / "local")
     (pluginUnderTestDetails() ++ temporaryIvyModulesDetails()).foreach { detail =>
       publisher.publish(
         jar = detail._1.path,
