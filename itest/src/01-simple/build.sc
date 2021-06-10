@@ -1,6 +1,6 @@
 // mill plugins under test
 import $exec.plugins
-import $ivy.`org.scoverage::scalac-scoverage-runtime:1.4.2`
+import $exec.shared
 import de.tobiasroeser.mill.integrationtest._
 import mill._
 import mill.define.Target
