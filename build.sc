@@ -1,6 +1,6 @@
 // mill plugins
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:0.4.0`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:0.4.1`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version_mill0.9:0.1.1`
 
 import scala.util.matching.Regex
@@ -26,6 +26,12 @@ val millApiCrossVersions = Seq(
   CrossConfig("0.6.2", "0.6.2", "2.12.11", testWithMill = Seq("0.6.2"))
 )
 
+object Deps {
+  val scoverageVersion = "1.4.8"
+  val scoveragePlugin = ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion}"
+  val scoverageRuntime = ivy"org.scoverage::scalac-scoverage-runtime:${scoverageVersion}"
+}
+
 val matrix = millApiCrossVersions.map(x => x.millPlatform -> x).toMap
 
 object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.map(_.millPlatform): _*)
@@ -37,12 +43,19 @@ class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with P
   override def artifactName = s"de.tobiasroeser.mill.integrationtest"
 
   override def compileIvyDeps = Agg(
+    // scala-steward:off
     ivy"com.lihaoyi::os-lib:0.6.3",
     ivy"com.lihaoyi::mill-main:${crossConfig.minMillVersion}",
     ivy"com.lihaoyi::mill-scalalib:${crossConfig.minMillVersion}"
+    // scala-steward:on
   )
 
-  override def scoverageVersion = "1.4.2"
+  override def scoverageVersion = Deps.scoverageVersion
+  // we need to adapt to changed publishing policy - patch-level
+  override def scoveragePluginDep = T {
+    Deps.scoveragePlugin
+  }
+
 
   object test extends Tests with ScoverageTests {
     override def testFrameworks = Seq("org.scalatest.tools.Framework")
@@ -110,6 +123,23 @@ class ItestCross(millVersion: String) extends MillIntegrationTestModule {
       }
       jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
+
+  override def perTestResources = T.sources { Seq(generatedSharedSrc()) }
+  def generatedSharedSrc = T{
+    os.write(
+      T.dest / "shared.sc",
+      s"""import $$ivy.`${
+        Deps.scoverageRuntime.dep.module.organization.value
+      }::${
+        Deps.scoverageRuntime.dep.module.name.value
+      }:${
+        Deps.scoverageRuntime.dep.version
+      }`
+        |""".stripMargin
+    )
+    PathRef(T.dest)
+  }
+
 }
 
 object P extends Module {
