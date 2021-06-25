@@ -13,7 +13,7 @@
 ifdef::env-github[]
 image:https://github.com/lefou/mill-integrationtest/workflows/.github/workflows/build.yml/badge.svg[Build Status (GitHub Actions), link="https://github.com/lefou/mill-integrationtest/actions"]
 image:https://codecov.io/gh/lefou/mill-integrationtest/branch/main/graph/badge.svg[Test Coverage (Codecov.io), link="https://codecov.io/gh/lefou/mill-integrationtest"]
-image:https://javadoc.io/badge2/de.tototec/de.tobiasroeser.mill.integrationtest_mill{mill-platform}_{scala-platform}/javadoc.svg["ScalaDoc", link = "https://javadoc.io/doc/de.tototec/de.tobiasroeser.mill.integrationtest_mill{mill-platform}_{scala-platform}"]
+image:https://javadoc.io/badge2/de.tototec/de.tobiasroeser.mill.integrationtest_mill{mill-platform}_{scala-platform}/scaladoc.svg["ScalaDoc", link = "https://javadoc.io/doc/de.tototec/de.tobiasroeser.mill.integrationtest_mill{mill-platform}_{scala-platform}"]
 endif::[]
 
 Integration testing for mill plugins.
