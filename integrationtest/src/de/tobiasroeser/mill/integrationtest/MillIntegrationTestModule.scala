@@ -71,12 +71,17 @@ trait MillIntegrationTestModule extends TaskModule {
   }
 
   protected def testTask(args: Task[Seq[String]]): Task[Seq[TestCase]] = T.task {
-    val ctx = T.ctx()
+    object log {
+      def errorRed(msg: String) = T.ctx.log.error(msg)
+      def error(msg: String) = T.ctx.log.errorStream.println(msg)
+      def info(msg: String) = T.ctx.log.outputStream.println(msg)
+      def debug(msg: String) = T.ctx.log.debug(msg)
+    }
 
     // publish Local
-    val ivyPath = ctx.dest / "ivyRepo"
+    val ivyPath = T.ctx.dest / "ivyRepo"
 
-    ctx.log.debug("Publishing plugins under test into test ivy repo")
+    log.debug("Publishing plugins under test into test ivy repo")
     val publisher = new LocalIvyPublisher(ivyPath / "local")
     (pluginUnderTestDetails() ++ temporaryIvyModulesDetails()).foreach { detail =>
       publisher.publish(
@@ -104,19 +109,19 @@ trait MillIntegrationTestModule extends TaskModule {
     //    val testInvocationsMap: Map[PathRef, TestInvocation.Targets] = testCases.toMap
     val tests = testCases.map(_._1)
 
-    ctx.log.debug(s"Running ${tests.size} integration tests")
+    log.debug(s"Running ${tests.size} integration tests")
     val results: Seq[TestCase] = tests.zipWithIndex.map {
       case (test, index) =>
         // TODO flush output streams, should we just wait a bit?
         val logLine = s"integration test [${index + 1}/${tests.size}]: ${test.path.last}"
         if (args().isEmpty || args().contains(test.path.last)) {
 
-          ctx.log.info(s"Starting ${logLine}")
+          log.info(s"Starting ${logLine}")
 
           // per-test preparation
 
           // The test dir
-          val testPath = ctx.dest / test.path.last
+          val testPath = T.ctx.dest / test.path.last
 
           // start clean
           os.remove.all(testPath)
@@ -165,7 +170,7 @@ trait MillIntegrationTestModule extends TaskModule {
           val results: Seq[TestInvocationResult] = testCases.toMap.apply(test).map { invocation =>
             if (prevFailed) TestInvocationResult(invocation, TestResult.Skipped, Seq(), Seq(), None)
             else {
-              ctx.log.info(s"Invoking ${logLine}: ${invocation}")
+              log.info(s"Invoking ${logLine}: ${invocation}")
               val result = invocation match {
                 case invocation @ TestInvocation.Targets(targets, expectedExitCode) =>
                   val outlog = os.temp(
@@ -210,15 +215,15 @@ trait MillIntegrationTestModule extends TaskModule {
           }
 
           finalRes match {
-            case TestResult.Success => ctx.log.info(s"Succeeded ${logLine}")
-            case TestResult.Skipped => ctx.log.info(s"Skipped ${logLine}")
-            case TestResult.Failed => ctx.log.error(s"Failed ${logLine}")
+            case TestResult.Success => log.info(s"Succeeded ${logLine}")
+            case TestResult.Skipped => log.info(s"Skipped ${logLine}")
+            case TestResult.Failed => log.errorRed(s"Failed ${logLine}")
           }
 
           TestCase(testPath.last, finalRes, results)
 
         } else {
-          ctx.log.debug(s"Skipping ${logLine}")
+          log.debug(s"Skipping ${logLine}")
           TestCase(test.path.last, TestResult.Skipped, Seq())
         }
     }
@@ -228,9 +233,9 @@ trait MillIntegrationTestModule extends TaskModule {
     val skipped = categorized.getOrElse(TestResult.Skipped, Seq())
     val failed: Seq[TestCase] = categorized.getOrElse(TestResult.Failed, Seq())
 
-    ctx.log.debug(s"\nSucceeded integration tests: ${succeeded.size}\n${succeeded.map(t => s"\n-  $t").mkString}")
-    ctx.log.debug(s"\nSkipped integration tests: ${skipped.size}\n${skipped.map(t => s"\n-  $t").mkString}")
-    ctx.log.debug(s"\nFailed integration tests: ${failed.size}\n${failed.map(t => s"\n-  $t").mkString}")
+    log.debug(s"\nSucceeded integration tests: ${succeeded.size}\n${succeeded.map(t => s"\n-  $t").mkString}")
+    log.debug(s"\nSkipped integration tests: ${skipped.size}\n${skipped.map(t => s"\n-  $t").mkString}")
+    log.debug(s"\nFailed integration tests: ${failed.size}\n${failed.map(t => s"\n-  $t").mkString}")
 
     // Also print details for failed integration tests
     if (failed.nonEmpty && showFailedRuns()) {
@@ -247,13 +252,13 @@ trait MillIntegrationTestModule extends TaskModule {
               }")
               .mkString
           }"
-      ctx.log.errorStream.println(errMsg)
+      log.error(errMsg)
     } catch {
-      case NonFatal(e) => ctx.log.error(s"Could not show logfile content for failed tests. ${e.getMessage()}")
+      case NonFatal(e) => log.errorRed(s"Could not show logfile content for failed tests. ${e.getMessage()}")
     }
     }
 
-    ctx.log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed")
+    log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed")
 
     if (failed.nonEmpty) {
       Result.Failure(s"${failed.size} integration test(s) failed:\n${failed.map(t => s"\n-  $t").mkString}", Some(results))
