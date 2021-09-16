@@ -44,7 +44,7 @@ class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with P
 
   override def compileIvyDeps = Agg(
     // scala-steward:off
-    ivy"com.lihaoyi::os-lib:0.6.3",
+    ivy"com.lihaoyi::os-lib:0.7.1",
     ivy"com.lihaoyi::mill-main:${crossConfig.minMillVersion}",
     ivy"com.lihaoyi::mill-scalalib:${crossConfig.minMillVersion}"
     // scala-steward:on
