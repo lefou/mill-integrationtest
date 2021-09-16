@@ -22,8 +22,8 @@ case class CrossConfig(millPlatform: String, minMillVersion: String, scalaVersio
 // Tuple: Mill version -> CrossConfig
 val millApiCrossVersions = Seq(
   CrossConfig("0.9", "0.9.3", "2.13.4", testWithMill = Seq("0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", "0.9.3")),
-  CrossConfig("0.7", "0.7.0", "2.13.4", testWithMill = Seq("0.8.0", "0.7.4", "0.7.3", "0.7.2", "0.7.1")),
-  CrossConfig("0.6.2", "0.6.2", "2.12.11", testWithMill = Seq("0.6.2"))
+//  CrossConfig("0.7", "0.7.0", "2.13.4", testWithMill = Seq("0.8.0", "0.7.4", "0.7.3", "0.7.2", "0.7.1")),
+//  CrossConfig("0.6.2", "0.6.2", "2.12.11", testWithMill = Seq("0.6.2"))
 )
 
 object Deps {
@@ -44,7 +44,7 @@ class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with P
 
   override def compileIvyDeps = Agg(
     // scala-steward:off
-    ivy"com.lihaoyi::os-lib:0.6.3",
+    ivy"com.lihaoyi::os-lib:0.7.1",
     ivy"com.lihaoyi::mill-main:${crossConfig.minMillVersion}",
     ivy"com.lihaoyi::mill-scalalib:${crossConfig.minMillVersion}"
     // scala-steward:on

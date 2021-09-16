@@ -159,12 +159,20 @@ The `MillIntegrationTestModule` trait provides the following targets:
    If `true`, The run log of a failed test case will be shown.
    Default: `true`.
 
+* `def prefetchIvyDeps: T[Agg[Dep]]` -
+  Add dependencies here, which you want to prefetch into your local coursier cache before acually running the tests.
+  Each dependency is resolved and fetched independently, so it is possible to fetch multiple versions of the same artifact.
+  Use this target to prepare integration test which should run offline.
+
 .Commands / Action Targets
 * `def test(): Command[Seq[TestCase]]` -
   Run the integration tests.
 
 * `def testCached: Target[Seq[TestCase]]` -
   Run the integration tests (same as `test`), but only if any input has changed since the last run.
+
+* `def prepareOffline: Command[Unit]` -
+  Prepares going offline by pre-fetching all known dependencies.
 
 == How can I ...
 
