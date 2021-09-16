@@ -14,7 +14,7 @@ import mill.scalalib._
 import mill.scalalib.publish._
 import os.Path
 
-val baseDir = build.millSourcePath
+val baseDir: os.Path = build.millSourcePath
 val rtMillVersion = build.version
 
 case class CrossConfig(millPlatform: String, minMillVersion: String, scalaVersion: String, testWithMill: Seq[String])
