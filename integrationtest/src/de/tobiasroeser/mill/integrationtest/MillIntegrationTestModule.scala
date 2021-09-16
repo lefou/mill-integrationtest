@@ -16,7 +16,7 @@ import os.{PathRedirect, ProcessOutput}
 /**
  * Run Integration for Mill Plugin.
  */
-trait MillIntegrationTestModule extends TaskModule {
+trait MillIntegrationTestModule extends TaskModule with OfflineSupportModule with ExtraCoursierSupport {
 
   import MillIntegrationTestModule._
 
@@ -33,7 +33,6 @@ trait MillIntegrationTestModule extends TaskModule {
    * Shared test resources, will be copied as-is into each test case working directory before the test in run.
    */
   def perTestResources: Sources = T.sources(millSourcePath / "src-shared")
-
 
   /**
    * The directories each representing a mill test case.
@@ -77,6 +76,9 @@ trait MillIntegrationTestModule extends TaskModule {
       def info(msg: String) = T.ctx.log.outputStream.println(msg)
       def debug(msg: String) = T.ctx.log.debug(msg)
     }
+
+    // trigger prefetching dependencies
+    resolvedPrefetchIvyDeps()
 
     // publish Local
     val ivyPath = T.ctx.dest / "ivyRepo"
@@ -141,13 +143,14 @@ trait MillIntegrationTestModule extends TaskModule {
 
           // also create a runner script, which can be ivoked manually
           val (runScript, scriptBody, perms) =
-            if(scala.util.Properties.isWin) (
+            if (scala.util.Properties.isWin) (
               testPath / "mill.bat",
               s"""set JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
                  |"${millExe.toIO.getAbsolutePath()}" -i --color false %*
                  |""".stripMargin,
-               null
-            ) else (
+              null
+            )
+            else (
               testPath / "mill",
               s"""#!/usr/bin/env sh
                  |export JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
@@ -192,11 +195,12 @@ trait MillIntegrationTestModule extends TaskModule {
                       mergeErrIntoOut = true
                     )
 
-                  val res = if (result.exitCode == expectedExitCode) {
-                    TestResult.Success
-                  } else {
-                    TestResult.Failed
-                  }
+                  val res =
+                    if (result.exitCode == expectedExitCode) {
+                      TestResult.Success
+                    } else {
+                      TestResult.Failed
+                    }
 
                   TestInvocationResult(invocation, res, result.out.lines, result.err.lines, Some(outlog))
               }
@@ -241,27 +245,30 @@ trait MillIntegrationTestModule extends TaskModule {
     if (failed.nonEmpty && showFailedRuns()) {
       try {
         val errMsg =
-          s"\nDetails for ${failed.size} failed tests: ${
-            failed
-              .map(t => s"\nOutput of failed test: ${t.name}\n${
-                t
-                  .invocations
-                  .flatMap(i => i.logFile.map(f => i -> f))
-                  .map(iandf => s"---------- Output for Invocation: ${iandf._1}\n${os.read(iandf._2)}\n---------- End of output\n")
-                  .mkString
-              }")
-              .mkString
-          }"
-      log.error(errMsg)
-    } catch {
-      case NonFatal(e) => log.errorRed(s"Could not show logfile content for failed tests. ${e.getMessage()}")
-    }
+          s"\nDetails for ${failed.size} failed tests: ${failed
+            .map(t =>
+              s"\nOutput of failed test: ${t.name}\n${t
+                .invocations
+                .flatMap(i => i.logFile.map(f => i -> f))
+                .map(iandf => s"---------- Output for Invocation: ${iandf._1}\n${os.read(iandf._2)}\n---------- End of output\n")
+                .mkString}"
+            )
+            .mkString}"
+        log.error(errMsg)
+      } catch {
+        case NonFatal(e) => log.errorRed(s"Could not show logfile content for failed tests. ${e.getMessage()}")
+      }
     }
 
-    log.info(s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed")
+    log.info(
+      s"Integration tests: ${tests.size}, ${succeeded.size} succeeded, ${skipped.size} skipped, ${failed.size} failed"
+    )
 
     if (failed.nonEmpty) {
-      Result.Failure(s"${failed.size} integration test(s) failed:\n${failed.map(t => s"\n-  $t").mkString}", Some(results))
+      Result.Failure(
+        s"${failed.size} integration test(s) failed:\n${failed.map(t => s"\n-  $t").mkString}",
+        Some(results)
+      )
     } else {
       Result.Success(results)
     }
@@ -286,17 +293,17 @@ trait MillIntegrationTestModule extends TaskModule {
     val fullVersion = millTestVersion()
     val mainVersion = parseVersion(fullVersion).get
     val suffix = mainVersion match {
-      case Array(0, 0|1|2|3|4, _) => ""
+      case Array(0, 0 | 1 | 2 | 3 | 4, _) => ""
       case _ => "-assembly"
     }
     val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.mkString(".")}/${fullVersion}${suffix}"
 
-    val cacheTarget =  T.env
+    val cacheTarget = T.env
       .get("XDG_CACHE_HOME")
       .map(os.Path(_))
       .getOrElse(os.home / ".cache") / "mill" / "download" / fullVersion
 
-    if(useCachedMillDownload() && os.exists(cacheTarget)) {
+    if (useCachedMillDownload() && os.exists(cacheTarget)) {
       PathRef(cacheTarget)
     } else {
       // we avoid a download, if the previous download was successful
@@ -312,7 +319,7 @@ trait MillIntegrationTestModule extends TaskModule {
         }
       }
 
-      if(useCachedMillDownload()) {
+      if (useCachedMillDownload()) {
         os.move(target, cacheTarget, createFolders = true)
         PathRef(cacheTarget)
       } else {
@@ -322,7 +329,7 @@ trait MillIntegrationTestModule extends TaskModule {
   }
 
   /** If `true`, the downloaded mill version used for tests will be cached to the system cache dir (e.g. `~/.cache`). */
-  def useCachedMillDownload: T[Boolean] = T{ true }
+  def useCachedMillDownload: T[Boolean] = T { true }
 
   /**
    * The targets which are called to test the project.
@@ -372,7 +379,8 @@ trait MillIntegrationTestModule extends TaskModule {
    * Internal target used to trigger required artifacts of the plugins under test.
    * You should not need to use or override this in you buildfile.
    */
-  protected def temporaryIvyModulesDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
+  protected def temporaryIvyModulesDetails
+      : Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
     T.traverse(temporaryIvyModules) { p =>
       p.jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
@@ -380,8 +388,23 @@ trait MillIntegrationTestModule extends TaskModule {
   /**
    * If `true`, The run log of a failed test case will be shown.
    */
-  def showFailedRuns: T[Boolean] = T{ true }
+  def showFailedRuns: T[Boolean] = T { true }
 
+  /**
+   * Dependencies listed here will be prefetch, before the test are started.
+   */
+  def prefetchIvyDeps: T[Agg[Dep]] = Agg.empty[Dep]
+
+  def resolvedPrefetchIvyDeps = T {
+    resolveSeparateDeps(prefetchIvyDeps)()
+  }
+
+  override def prepareOffline(): Command[Unit] = T.command {
+    super.prepareOffline()()
+    downloadMillTestVersion()
+    resolvedPrefetchIvyDeps()
+    ()
+  }
 }
 
 object MillIntegrationTestModule {
@@ -399,14 +422,14 @@ object MillIntegrationTestModule {
   // also os.copy in os-lib 0.7.5 to 0.7.7 has broken bin compat
   // making mill 0.9.7 incompatible
   private def copyWithMerge(
-                     from: os.Path,
-                     to: os.Path,
-                     followLinks: Boolean = true,
-                     replaceExisting: Boolean = false,
-                     copyAttributes: Boolean = false,
-                     createFolders: Boolean = false,
-                     mergeFolders: Boolean = false
-                   ): Unit = {
+      from: os.Path,
+      to: os.Path,
+      followLinks: Boolean = true,
+      replaceExisting: Boolean = false,
+      copyAttributes: Boolean = false,
+      createFolders: Boolean = false,
+      mergeFolders: Boolean = false
+  ): Unit = {
     if (createFolders) os.makeDir.all(to / os.up)
     val opts1 =
       if (followLinks) Array[CopyOption]()
