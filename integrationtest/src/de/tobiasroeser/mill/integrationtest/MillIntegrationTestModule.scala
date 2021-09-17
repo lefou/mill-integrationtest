@@ -293,10 +293,10 @@ trait MillIntegrationTestModule extends TaskModule with OfflineSupportModule wit
     val fullVersion = millTestVersion()
     val mainVersion = parseVersion(fullVersion).get
     val suffix = mainVersion match {
-      case Array(0, 0 | 1 | 2 | 3 | 4, _) => ""
+      case MillVersion(0, 0 | 1 | 2 | 3 | 4, _, _, _) => ""
       case _ => "-assembly"
     }
-    val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.mkString(".")}/${fullVersion}${suffix}"
+    val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.versionTag}/${fullVersion}${suffix}"
 
     val cacheTarget = T.env
       .get("XDG_CACHE_HOME")
@@ -409,13 +409,32 @@ trait MillIntegrationTestModule extends TaskModule with OfflineSupportModule wit
 
 object MillIntegrationTestModule {
 
+  case class MillVersion(
+      major: Int,
+      minor: Int,
+      micro: Int,
+      milestone: Option[Int] = None,
+      extra: Option[String] = None
+  ) {
+    def isMilestone = milestone.isDefined
+    def isSnapshot = extra.isDefined
+    def versionTag = s"${major}.${minor}.${micro}${milestone.map("-M" + _).getOrElse("")}"
+  }
+
   /** Extract the major, minor and micro version parts of the given version string. */
-  def parseVersion(version: String): Try[Array[Int]] = Try {
-    version
-      .split("[-]", 2)(0)
-      .split("[.]", 4)
+  def parseVersion(version: String): Try[MillVersion] = Try {
+    val parts = version.split("[-]", 3)
+    val vPart = parts(0).split("[.]", 4)
       .take(3)
       .map(_.toInt)
+    val (milestone, extra) = parts.drop(1) match {
+      case Array() => (None, None)
+      case Array(x) if x.startsWith("M") => (Some(x.drop(1).toInt), None)
+      case Array(x) => (None, Some(x))
+      case Array(x, y) if x.startsWith("M") => (Some(x.drop(1).toInt), Some(y))
+      case Array(x, y) => (None, Some(s"${x}-${y}"))
+    }
+    MillVersion(vPart(0), vPart(1), vPart(2), milestone, extra)
   }
 
   // partial copy of os.copy version 0.7.7
