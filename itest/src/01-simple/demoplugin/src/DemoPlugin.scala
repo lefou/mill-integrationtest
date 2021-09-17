@@ -4,5 +4,5 @@ import mill.T
 import mill.define.Module
 
 trait DemoPluginModule extends Module {
-  def demo: T[String] = T{ "DemoPlugin" }
+  def demo: T[String] = T { "DemoPlugin" }
 }

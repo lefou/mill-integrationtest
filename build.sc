@@ -21,7 +21,12 @@ case class CrossConfig(millPlatform: String, minMillVersion: String, scalaVersio
 
 // Tuple: Mill version -> CrossConfig
 val millApiCrossVersions = Seq(
-  CrossConfig("0.9", "0.9.3", "2.13.4", testWithMill = Seq("0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", "0.9.3")),
+  CrossConfig(
+    "0.9",
+    "0.9.3",
+    "2.13.4",
+    testWithMill = Seq("0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", "0.9.3")
+  )
 //  CrossConfig("0.7", "0.7.0", "2.13.4", testWithMill = Seq("0.8.0", "0.7.4", "0.7.3", "0.7.2", "0.7.1")),
 //  CrossConfig("0.6.2", "0.6.2", "2.12.11", testWithMill = Seq("0.6.2"))
 )
@@ -35,7 +40,8 @@ object Deps {
 val matrix = millApiCrossVersions.map(x => x.millPlatform -> x).toMap
 
 object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.map(_.millPlatform): _*)
-class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with PublishModule with ScoverageModule { outer =>
+class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with PublishModule with ScoverageModule {
+  outer =>
   private val crossConfig = matrix(millPlatfrom)
   override def publishVersion = VcsVersion.vcsState().format()
   override def crossScalaVersion = crossConfig.scalaVersion
@@ -55,7 +61,6 @@ class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with P
   override def scoveragePluginDep = T {
     Deps.scoveragePlugin
   }
-
 
   object test extends Tests with ScoverageTests {
     override def testFrameworks = Seq("org.scalatest.tools.Framework")
@@ -125,17 +130,11 @@ class ItestCross(millVersion: String) extends MillIntegrationTestModule {
     }
 
   override def perTestResources = T.sources { Seq(generatedSharedSrc()) }
-  def generatedSharedSrc = T{
+  def generatedSharedSrc = T {
     os.write(
       T.dest / "shared.sc",
-      s"""import $$ivy.`${
-        Deps.scoverageRuntime.dep.module.organization.value
-      }::${
-        Deps.scoverageRuntime.dep.module.name.value
-      }:${
-        Deps.scoverageRuntime.dep.version
-      }`
-        |""".stripMargin
+      s"""import $$ivy.`${Deps.scoverageRuntime.dep.module.organization.value}::${Deps.scoverageRuntime.dep.module.name.value}:${Deps.scoverageRuntime.dep.version}`
+         |""".stripMargin
     )
     PathRef(T.dest)
   }
@@ -151,8 +150,10 @@ object P extends Module {
     val target = mill.modules.Util.download("https://raw.githubusercontent.com/lefou/millw/master/millw")
     val millw = baseDir / "millw"
     val res = os.proc(
-      "sed", s"""s,\\(^DEFAULT_MILL_VERSION=\\).*$$,\\1${Regex.quoteReplacement(rtMillVersion())},""",
-      target.path.toIO.getAbsolutePath()).call(cwd = baseDir)
+      "sed",
+      s"""s,\\(^DEFAULT_MILL_VERSION=\\).*$$,\\1${Regex.quoteReplacement(rtMillVersion())},""",
+      target.path.toIO.getAbsolutePath()
+    ).call(cwd = baseDir)
     os.write.over(millw, res.out.text())
     os.perms.set(millw, os.perms(millw) + java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE)
     target
