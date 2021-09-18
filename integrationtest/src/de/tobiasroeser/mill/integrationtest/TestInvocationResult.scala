@@ -1,11 +1,11 @@
 package de.tobiasroeser.mill.integrationtest
 
 case class TestInvocationResult(
-  testInvocation: TestInvocation,
-  result: TestResult,
-  out: Seq[String],
-  err: Seq[String],
-  logFile: Option[os.Path]
+    testInvocation: TestInvocation,
+    result: TestResult,
+    out: Seq[String],
+    err: Seq[String],
+    logFile: Option[os.Path]
 )
 
 object TestInvocationResult {

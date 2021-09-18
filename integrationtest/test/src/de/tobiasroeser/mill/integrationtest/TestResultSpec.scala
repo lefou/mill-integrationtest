@@ -12,7 +12,7 @@ class TestResultSpec extends AnyFreeSpec with ScalaCheckPropertyChecks {
 
       forAll {
         (tr: TestResult) =>
-        assert(tr === read[TestResult](write(tr)))
+          assert(tr === read[TestResult](write(tr)))
       }
     }
   }

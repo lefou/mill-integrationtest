@@ -27,8 +27,7 @@ object demoplugin extends DemoModule {
   )
 }
 
-object demoutil extends DemoModule {
-}
+object demoutil extends DemoModule {}
 
 trait Itest extends MillIntegrationTestModule {
   def millTestVersion = "0.7.3"
@@ -38,12 +37,14 @@ trait Itest extends MillIntegrationTestModule {
 
 object itest extends Itest {
   override def temporaryIvyModules: Seq[PublishModule] = Seq(demoutil)
-  override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T{ Seq(
-    PathRef(millSourcePath / "src" / "demo") -> Seq(
-      TestInvocation.Targets(Seq("verify")),
-      TestInvocation.Targets(Seq("-d", "fail"), 1)
+  override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
+    Seq(
+      PathRef(millSourcePath / "src" / "demo") -> Seq(
+        TestInvocation.Targets(Seq("verify")),
+        TestInvocation.Targets(Seq("-d", "fail"), 1)
+      )
     )
-  )}
+  }
 
 }
 

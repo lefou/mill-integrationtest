@@ -11,12 +11,11 @@ import org.example.demoplugin.DemoPluginModule
 import $ivy.`org.example::demoutil:0.0.1`
 import org.example.demoutil.DemoUtil
 
-object Demo extends DemoPluginModule {
-}
+object Demo extends DemoPluginModule {}
 
 def verify(): Command[Unit] = T.command {
-  if(Demo.demo() != "DemoPlugin") sys.error(s"Expected 'DemoPlugin' but was '${Demo.demo()}'")
-  if(DemoUtil.demo != "DemoUtil") sys.error(s"Expected 'DemoUtil' but was '${DemoUtil.demo}'")
+  if (Demo.demo() != "DemoPlugin") sys.error(s"Expected 'DemoPlugin' but was '${Demo.demo()}'")
+  if (DemoUtil.demo != "DemoUtil") sys.error(s"Expected 'DemoUtil' but was '${DemoUtil.demo}'")
   ()
 }
 
