@@ -415,6 +415,7 @@ Please make sure to use the correct platform suffix matching your used mill vers
 [options="header"]
 |===
 | mill version | mill platform | suffix | example
+| 0.10.0-M4 | 0.10.0-M4 | `_mill0.10.0-M4` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::{version}````
 | 0.9.0 | 0.9 | `_mill0.9` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:{version}````
 | 0.7.0 - 0.8.0 | 0.7 | `_mill0.7` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.7:{version}````
 | 0.6.2 | 0.6.2 | `_mill0.6.2` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.6.2_2.12:{version}````
@@ -438,6 +439,7 @@ Newer version of mill may or may not work. (Feel free to update this page via a 
 [options="header"]
 |===
 | mill-integrationtest | mill
+| main  | 0.9.3 - 0.9.9, 0.10.0-M4
 | 0.4.1 | 0.6.2 - 0.9.9
 | 0.4.0 | 0.6.2 - 0.9.6, (not 0.9.7), 0.9.8 - 0.9.9
 | 0.3.3 | 0.6.2 - 0.8.0
@@ -473,6 +475,10 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 
 == Changelog
+
+=== main branch
+
+* Added support for Mill 0.10.0-M4
 
 === mill-integrationtest 0.4.1 - 2021-06-09
 
