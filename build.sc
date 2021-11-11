@@ -1,6 +1,6 @@
 // mill plugins
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:0.4.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:0.4.1-16-63f11c`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version_mill0.9:0.1.1`
 
 import scala.util.matching.Regex
@@ -22,17 +22,21 @@ case class CrossConfig(millPlatform: String, minMillVersion: String, scalaVersio
 // Tuple: Mill version -> CrossConfig
 val millApiCrossVersions = Seq(
   CrossConfig(
-    "0.9",
-    "0.9.3",
-    "2.13.4",
+    millPlatform = "0.10.0-M4",
+    minMillVersion = "0.10.0-M4",
+    scalaVersion = "2.13.6",
+    testWithMill = Seq("0.10.0-M4")
+  ),
+  CrossConfig(
+    millPlatform = "0.9",
+    minMillVersion = "0.9.3",
+    scalaVersion = "2.13.6",
     testWithMill = Seq("0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", "0.9.3")
   )
-//  CrossConfig("0.7", "0.7.0", "2.13.4", testWithMill = Seq("0.8.0", "0.7.4", "0.7.3", "0.7.2", "0.7.1")),
-//  CrossConfig("0.6.2", "0.6.2", "2.12.11", testWithMill = Seq("0.6.2"))
 )
 
 object Deps {
-  val scoverageVersion = "1.4.9"
+  val scoverageVersion = "1.4.10"
   val scoveragePlugin = ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion}"
   val scoverageRuntime = ivy"org.scoverage::scalac-scoverage-runtime:${scoverageVersion}"
 }
@@ -47,6 +51,9 @@ class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with P
   override def crossScalaVersion = crossConfig.scalaVersion
   override def artifactSuffix = s"_mill${crossConfig.millPlatform}_${artifactScalaVersion()}"
   override def artifactName = s"de.tobiasroeser.mill.integrationtest"
+  override def sources: Sources = T.sources  {
+    super.sources() ++ Seq(PathRef(millSourcePath / s"src-${millPlatfrom}"))
+  }
 
   override def compileIvyDeps = Agg(
     // scala-steward:off
