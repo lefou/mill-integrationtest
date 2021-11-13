@@ -29,9 +29,9 @@ val millApiCrossVersions = Seq(
   ),
   CrossConfig(
     millPlatform = "0.9",
-    minMillVersion = "0.9.3",
+    minMillVersion = "0.9.10",
     scalaVersion = "2.13.6",
-    testWithMill = Seq("0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", "0.9.3")
+    testWithMill = Seq("0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", "0.9.10")
   )
 )
 
@@ -51,7 +51,7 @@ class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with P
   override def crossScalaVersion = crossConfig.scalaVersion
   override def artifactSuffix = s"_mill${crossConfig.millPlatform}_${artifactScalaVersion()}"
   override def artifactName = s"de.tobiasroeser.mill.integrationtest"
-  override def sources: Sources = T.sources  {
+  override def sources: Sources = T.sources {
     super.sources() ++ Seq(PathRef(millSourcePath / s"src-${millPlatfrom}"))
   }
 
