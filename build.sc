@@ -28,7 +28,7 @@ val millApiCrossVersions = Seq(
   ),
   CrossConfig(
     millPlatform = "0.9",
-    minMillVersion = "0.9.3", // scala-stewared:off
+    minMillVersion = "0.9.10", // scala-stewared:off
     scalaVersion = "2.13.6",
     testWithMill = Seq("0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", "0.9.10")
   )
