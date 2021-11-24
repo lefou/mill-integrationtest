@@ -19,17 +19,16 @@ val rtMillVersion = build.version
 
 case class CrossConfig(millPlatform: String, minMillVersion: String, scalaVersion: String, testWithMill: Seq[String])
 
-// Tuple: Mill version -> CrossConfig
 val millApiCrossVersions = Seq(
   CrossConfig(
-    millPlatform = "0.10.0-M4",
+    millPlatform = "0.10.0-M4", // scala-steward:off
     minMillVersion = "0.10.0-M4",
     scalaVersion = "2.13.6",
     testWithMill = Seq("0.10.0-M4")
   ),
   CrossConfig(
     millPlatform = "0.9",
-    minMillVersion = "0.9.3",
+    minMillVersion = "0.9.3", // scala-stewared:off
     scalaVersion = "2.13.6",
     testWithMill = Seq("0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", "0.9.3")
   )
@@ -41,6 +40,7 @@ object Deps {
   val scoverageRuntime = ivy"org.scoverage::scalac-scoverage-runtime:${scoverageVersion}"
 }
 
+// Tuple: Mill platform -> CrossConfig
 val matrix = millApiCrossVersions.map(x => x.millPlatform -> x).toMap
 
 object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.map(_.millPlatform): _*)
