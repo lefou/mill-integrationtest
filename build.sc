@@ -17,21 +17,25 @@ import os.Path
 val baseDir: os.Path = build.millSourcePath
 val rtMillVersion = build.version
 
-case class CrossConfig(millPlatform: String, minMillVersion: String, scalaVersion: String, testWithMill: Seq[String])
+sealed trait CrossConfig {
+  def millPlatform: String
+  def minMillVersion: String
+  def scalaVersion: String
+  def testWithMill: Seq[String] = Seq(minMillVersion)
+}
 
 val millApiCrossVersions = Seq(
-  CrossConfig(
-    millPlatform = "0.10.0-M4", // scala-steward:off
-    minMillVersion = "0.10.0-M4",
-    scalaVersion = "2.13.6",
-    testWithMill = Seq("0.10.0-M4")
-  ),
-  CrossConfig(
-    millPlatform = "0.9",
-    minMillVersion = "0.9.3", // scala-stewared:off
-    scalaVersion = "2.13.6",
-    testWithMill = Seq("0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", "0.9.3")
-  )
+  new CrossConfig {
+    override def millPlatform = "0.10.0-M4"
+    override def minMillVersion: String = millPlatform // scala-steward:off
+    override def scalaVersion = "2.13.6"
+  },
+  new CrossConfig {
+    override def millPlatform = "0.9"
+    override def minMillVersion: String = "0.9.3" // scala-steward:off
+    override def scalaVersion = "2.13.6"
+    override def testWithMill = Seq("0.9.10", "0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", minMillVersion)
+  }
 )
 
 object Deps {
@@ -69,8 +73,7 @@ class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with P
     Deps.scoveragePlugin
   }
 
-  object test extends Tests with ScoverageTests {
-    override def testFrameworks = Seq("org.scalatest.tools.Framework")
+  object test extends Tests with ScoverageTests with TestModule.ScalaTest {
     override def ivyDeps = Agg(
       ivy"org.scalatest::scalatest:3.2.10",
       ivy"org.scalatestplus::scalacheck-1-14:3.2.2.0"
