@@ -71,17 +71,17 @@ trait MillIntegrationTestModule extends TaskModule with OfflineSupportModule wit
 
   protected def testTask(args: Task[Seq[String]]): Task[Seq[TestCase]] = T.task {
     object log {
-      def errorRed(msg: String) = T.ctx.log.error(msg)
-      def error(msg: String) = T.ctx.log.errorStream.println(msg)
-      def info(msg: String) = T.ctx.log.outputStream.println(msg)
-      def debug(msg: String) = T.ctx.log.debug(msg)
+      def errorRed(msg: String) = T.log.error(msg)
+      def error(msg: String) = T.log.errorStream.println(msg)
+      def info(msg: String) = T.log.outputStream.println(msg)
+      def debug(msg: String) = T.log.debug(msg)
     }
 
     // trigger prefetching dependencies
     resolvedPrefetchIvyDeps()
 
     // publish Local
-    val ivyPath = T.ctx.dest / "ivyRepo"
+    val ivyPath = T.dest / "ivyRepo"
 
     log.debug("Publishing plugins under test into test ivy repo")
     val publisher = new LocalIvyPublisher(ivyPath / "local")
@@ -123,7 +123,7 @@ trait MillIntegrationTestModule extends TaskModule with OfflineSupportModule wit
           // per-test preparation
 
           // The test dir
-          val testPath = T.ctx.dest / test.path.last
+          val testPath = T.dest / test.path.last
 
           // start clean
           os.remove.all(testPath)
