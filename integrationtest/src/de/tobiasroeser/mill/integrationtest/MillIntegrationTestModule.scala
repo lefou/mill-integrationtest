@@ -15,7 +15,7 @@ import mill.scalalib.publish._
 import os.{PathRedirect, ProcessOutput}
 
 /**
- * Run Integration for Mill Plugin.
+ * Run Integration test for Mill Plugins.
  */
 trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport with MillIntegrationTestModulePlatform {
 

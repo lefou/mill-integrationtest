@@ -28,18 +28,18 @@ val millApiCrossVersions = Seq(
   new CrossConfig {
     override def millPlatform = "0.10"
     override def minMillVersion: String = "0.10.0" // scala-steward:off
-    override def scalaVersion = "2.13.6"
+    override def scalaVersion = "2.13.8"
   },
   new CrossConfig {
     override def millPlatform = "0.9"
     override def minMillVersion: String = "0.9.3" // scala-steward:off
-    override def scalaVersion = "2.13.6"
-    override def testWithMill = Seq("0.9.10", "0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", minMillVersion)
+    override def scalaVersion = "2.13.8"
+    override def testWithMill = Seq("0.9.12", "0.9.11", "0.9.10", "0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", minMillVersion)
   }
 )
 
 object Deps {
-  val scoverageVersion = "1.4.10"
+  val scoverageVersion = "1.4.11"
   val scoveragePlugin = ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion}"
   val scoverageRuntime = ivy"org.scoverage::scalac-scoverage-runtime:${scoverageVersion}"
 }
