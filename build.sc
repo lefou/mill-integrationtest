@@ -26,8 +26,8 @@ sealed trait CrossConfig {
 
 val millApiCrossVersions = Seq(
   new CrossConfig {
-    override def millPlatform = "0.10.0-M4"
-    override def minMillVersion: String = millPlatform // scala-steward:off
+    override def millPlatform = "0.10"
+    override def minMillVersion: String = "0.10.0" // scala-steward:off
     override def scalaVersion = "2.13.6"
   },
   new CrossConfig {
@@ -55,7 +55,7 @@ class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with P
   override def crossScalaVersion = crossConfig.scalaVersion
   override def artifactSuffix = s"_mill${crossConfig.millPlatform}_${artifactScalaVersion()}"
   override def artifactName = s"de.tobiasroeser.mill.integrationtest"
-  override def sources: Sources = T.sources  {
+  override def sources: Sources = T.sources {
     super.sources() ++ Seq(PathRef(millSourcePath / s"src-${millPlatfrom}"))
   }
 

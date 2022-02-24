@@ -6,6 +6,7 @@ import java.nio.file.attribute.PosixFilePermission
 import scala.util.Try
 import scala.util.control.NonFatal
 
+import mainargs.Flag
 import mill._
 import mill.api.{Ctx, Result}
 import mill.define.{Command, Sources, Target, Task, TaskModule}
@@ -16,7 +17,7 @@ import os.{PathRedirect, ProcessOutput}
 /**
  * Run Integration for Mill Plugin.
  */
-trait MillIntegrationTestModule extends TaskModule with OfflineSupportModule with ExtraCoursierSupport {
+trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport with MillIntegrationTestModulePlatform {
 
   import MillIntegrationTestModule._
 
@@ -397,13 +398,6 @@ trait MillIntegrationTestModule extends TaskModule with OfflineSupportModule wit
 
   def resolvedPrefetchIvyDeps = T {
     resolveSeparateDeps(prefetchIvyDeps)()
-  }
-
-  override def prepareOffline(): Command[Unit] = T.command {
-    super.prepareOffline()()
-    downloadMillTestVersion()
-    resolvedPrefetchIvyDeps()
-    ()
   }
 }
 
