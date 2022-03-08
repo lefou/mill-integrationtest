@@ -23,3 +23,8 @@ def fail(): Command[Unit] = T.command {
   sys.error("Fail on purpose")
   ()
 }
+
+def checkEnv(): Command[Unit] = T.command {
+  val envVal = T.env.getOrElse("TEST_ENV", "")
+  if(envVal != "SET") sys.error(s"Expected env var 'TEST_ENV' to contain value 'SET', but it was: ${envVal}")
+}

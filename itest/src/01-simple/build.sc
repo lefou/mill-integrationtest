@@ -41,7 +41,9 @@ object itest extends Itest {
     Seq(
       PathRef(millSourcePath / "src" / "demo") -> Seq(
         TestInvocation.Targets(Seq("verify")),
-        TestInvocation.Targets(Seq("-d", "fail"), 1)
+        TestInvocation.Targets(Seq("-d", "fail"), 1),
+        TestInvocation.Targets(Seq("checkEnv"), 1),
+        TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"))
       )
     )
   }
