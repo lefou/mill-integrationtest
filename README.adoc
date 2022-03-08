@@ -1,11 +1,11 @@
 = mill-integrationtest - Integration test plugin for mill plugins
-:version: 0.4.1
-:mill-platform: 0.9
+:version: 0.4.2
+:mill-platform: 0.10
 :scala-platform: 2.13
 :min-mill-version: 0.6.2
-:example-mill-version: 0.9.8
+:example-mill-version: 0.10.1
 :project-home: https://github.com/lefou/mill-integrationtest
-:scoverage-version: 1.4.1
+:scoverage-version: 1.4.11
 :munit-version: 0.7.7
 :toc:
 :toc-placement: preamble
@@ -36,7 +36,7 @@ First you need to add a new test module, e.g. `itest`.
 [source,scala,subs="verbatim,attributes"]
 ----
 // build.sc
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill{mill-platform}:{version}`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::{version}`
 import de.tobiasroeser.mill.integrationtest._
 
 object demo extends ScalaModule with PublishModule {
@@ -415,7 +415,7 @@ Please make sure to use the correct platform suffix matching your used mill vers
 [options="header"]
 |===
 | mill version | mill platform | suffix | example
-| 0.10.0-M4 | 0.10.0-M4 | `_mill0.10.0-M4` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::{version}````
+| 0.10.0 | 0.10 | `_mill0.10` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::{version}````
 | 0.9.0 | 0.9 | `_mill0.9` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:{version}````
 | 0.7.0 - 0.8.0 | 0.7 | `_mill0.7` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.7:{version}````
 | 0.6.2 | 0.6.2 | `_mill0.6.2` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.6.2_2.12:{version}````
@@ -439,8 +439,8 @@ Newer version of mill may or may not work. (Feel free to update this page via a 
 [options="header"]
 |===
 | mill-integrationtest | mill
-| main  | 0.9.3 - 0.9.9, 0.10.0-M4
-| 0.4.1 | 0.6.2 - 0.9.9
+| 0.4.2  | 0.9.3 - 0.9.12, 0.10.0 -
+| 0.4.1 | 0.6.2 - 0.9.12
 | 0.4.0 | 0.6.2 - 0.9.6, (not 0.9.7), 0.9.8 - 0.9.9
 | 0.3.3 | 0.6.2 - 0.8.0
 | 0.3.2 | 0.6.2 - 0.8.0
@@ -478,7 +478,12 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 === main branch
 
-* Added support for Mill 0.10.0-M4
+=== mill-integrationtest 0.4.2 - 2022-03-08
+
+* Added support for Mill 0.10
+* Added support for mill milestone versions
+* Added `prefetcIvyDeps` and offline support
+* Dependency updates
 
 === mill-integrationtest 0.4.1 - 2021-06-09
 
