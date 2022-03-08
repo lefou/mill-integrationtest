@@ -86,7 +86,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
 
     log.debug("Publishing plugins under test into test ivy repo")
     val publisher = new LocalIvyPublisher(ivyPath / "local")
-    (pluginUnderTestDetails() ++ temporaryIvyModulesDetails()).foreach { detail =>
+    (pluginUnderTestDetails() ++ temporaryIvyModulesDetails()).distinct.foreach { detail =>
       publisher.publish(
         jar = detail._1.path,
         sourcesJar = detail._2._1.path,
@@ -360,6 +360,11 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    */
   def pluginsUnderTest: Seq[PublishModule]
 
+  def transitivePluginsUnderTest: Seq[PublishModule] =
+    pluginsUnderTest.flatMap(_.transitiveModuleDeps).collect{
+      case m: PublishModule => m
+    }
+
   /**
    * Additional modules you need in the temporary ivy repository, but not in the resulting mill build classpath.
    * The defined modules will be published into a temporary ivy repository before the tests are executed.
@@ -367,12 +372,17 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    */
   def temporaryIvyModules: Seq[PublishModule] = Seq()
 
+  def transitiveTemporaryIvyModules: Seq[PublishModule] =
+    temporaryIvyModules.flatMap(_.transitiveModuleDeps).collect{
+      case m: PublishModule => m
+    }
+
   /**
    * Internal target used to trigger required artifacts of the plugins under test.
    * You should not need to use or override this in you buildfile.
    */
   protected def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
-    T.traverse(pluginsUnderTest) { p =>
+    T.traverse(transitivePluginsUnderTest) { p =>
       p.jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
 
@@ -382,7 +392,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    */
   protected def temporaryIvyModulesDetails
       : Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
-    T.traverse(temporaryIvyModules) { p =>
+    T.traverse(transitiveTemporaryIvyModules) { p =>
       p.jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
 
