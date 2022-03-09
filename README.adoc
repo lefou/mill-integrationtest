@@ -16,7 +16,7 @@ image:https://codecov.io/gh/lefou/mill-integrationtest/branch/main/graph/badge.s
 image:https://javadoc.io/badge2/de.tototec/de.tobiasroeser.mill.integrationtest_mill{mill-platform}_{scala-platform}/scaladoc.svg["ScalaDoc", link = "https://javadoc.io/doc/de.tototec/de.tobiasroeser.mill.integrationtest_mill{mill-platform}_{scala-platform}"]
 endif::[]
 
-Integration testing for mill plugins.
+Integration testing for https://github.com/com-lihaoyi/mill[Mill] plugins.
 
 == Quickstart
 
@@ -418,7 +418,7 @@ On older Mill versions, you need to add the platform suffix manually.
 
 | mill version | mill platform | suffix | example
 | 0.10.0 | 0.10 | `_mill0.10` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::{version}````
-| 0.9.0 | 0.9 | `_mill0.9` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:{version}````
+| 0.9.3 | 0.9 | `_mill0.9` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:{version}````
 |===
 
 
@@ -439,6 +439,7 @@ Newer version of mill may or may not work. (Feel free to update this page via a 
 [options="header"]
 |===
 | mill-integrationtest | mill
+| 0.5.0  | 0.9.3 - 0.9.12, 0.10.0 - 0.10.1
 | 0.4.2  | 0.9.3 - 0.9.12, 0.10.0 - 0.10.1
 | 0.4.1 | 0.6.2 - 0.9.12
 | 0.4.0 | 0.6.2 - 0.9.6, (not 0.9.7), 0.9.8 - 0.9.9
