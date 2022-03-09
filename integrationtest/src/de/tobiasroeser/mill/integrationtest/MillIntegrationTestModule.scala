@@ -176,7 +176,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
             else {
               log.info(s"Invoking ${logLine}: ${invocation}")
               val result = invocation match {
-                case invocation @ TestInvocation.Targets(targets, expectedExitCode) =>
+                case invocation @ TestInvocation.Targets(targets, expectedExitCode, env) =>
                   val outlog = os.temp(
                     dir = testPath,
                     prefix = "out-",
@@ -193,7 +193,8 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
                       check = false,
                       stdout = pathRedirect,
                       // stderr = pathRedirect,
-                      mergeErrIntoOut = true
+                      mergeErrIntoOut = true,
+                      env = env
                     )
 
                   val res =
