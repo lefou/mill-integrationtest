@@ -1,5 +1,5 @@
 = mill-integrationtest - Integration test plugin for mill plugins
-:version: 0.4.2
+:version: 0.5.0
 :mill-platform: 0.10
 :scala-platform: 2.13
 :min-mill-version: 0.9.3
@@ -477,6 +477,12 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 == Changelog
 
 === main branch
+
+=== mill-integrationtest 0.5.0 - 2022-03-09
+
+* Support to specify environment variables for test runs
+* Support `moduleDeps` of tests plugins (to publish them transitively into the test repository)
+* Updated toolchain to use Mill 0.10.1 and newer plugins
 
 === mill-integrationtest 0.4.2 - 2022-03-08
 
