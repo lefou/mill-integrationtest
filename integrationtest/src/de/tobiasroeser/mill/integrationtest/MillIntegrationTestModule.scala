@@ -362,7 +362,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
   def pluginsUnderTest: Seq[PublishModule]
 
   def transitivePluginsUnderTest: Seq[PublishModule] =
-    pluginsUnderTest.flatMap(_.transitiveModuleDeps).collect{
+    pluginsUnderTest.flatMap(_.transitiveModuleDeps).collect {
       case m: PublishModule => m
     }
 
@@ -374,7 +374,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
   def temporaryIvyModules: Seq[PublishModule] = Seq()
 
   def transitiveTemporaryIvyModules: Seq[PublishModule] =
-    temporaryIvyModules.flatMap(_.transitiveModuleDeps).collect{
+    temporaryIvyModules.flatMap(_.transitiveModuleDeps).collect {
       case m: PublishModule => m
     }
 

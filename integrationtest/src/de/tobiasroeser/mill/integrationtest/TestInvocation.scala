@@ -13,7 +13,7 @@ object TestInvocation {
         "(targets=" + targets +
         ",expectedExitCode=" + expectedExitCode +
         ",env=" + env
-        ")"
+    ")"
   }
 
   object Targets {
