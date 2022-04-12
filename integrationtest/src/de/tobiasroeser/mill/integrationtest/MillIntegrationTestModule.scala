@@ -298,12 +298,13 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
       case MillVersion(0, 0 | 1 | 2 | 3 | 4, _, _, _) => ""
       case _ => "-assembly"
     }
+    val exeSuffix = if (scala.util.Properties.isWin) ".bat" else ""
     val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.versionTag}/${fullVersion}${suffix}"
 
     val cacheTarget = T.env
       .get("XDG_CACHE_HOME")
       .map(os.Path(_))
-      .getOrElse(os.home / ".cache") / "mill" / "download" / fullVersion
+      .getOrElse(os.home / ".cache") / "mill" / "download" / s"${fullVersion}${exeSuffix}"
 
     if (useCachedMillDownload() && os.exists(cacheTarget)) {
       PathRef(cacheTarget)
