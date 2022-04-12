@@ -4,7 +4,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
         java-version: [1.8, 11]
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.os == 'windows-latest' }}
@@ -18,17 +18,16 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
 
-      - run: ./millw -i -k -d __.testCached
-
-      - run: ./millw -i -j 0 -k __.scoverage.xmlReport
+      - run: ./millw -i -k -d __.testCached + __.scoverage.xmlReport + __.publishLocal testRepo
+        if: matrix.os != 'windows-latest'
+      - run: .\millw.bat -i -k -d __.testCached + __.scoverage.xmlReport + __.publishLocal testRepo
+        if: matrix.os == 'windows-latest'
 
       - name: Upload scoverage reports to codecov.io
         uses: codecov/codecov-action@v1
         with:
           file: ./out/*/scoverage/xmlReport/dest/scoverage.xml
         continue-on-error: true
-
-      - run: ./millw -i -j 0 __.publishLocal $(pwd)/testRepo
 
   publish:
     if: github.repository == 'lefou/mill-integrationtest' && github.ref == 'refs/heads/main' && github.event_name == 'push'
