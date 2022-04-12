@@ -6,13 +6,15 @@ object TestInvocation {
   final case class Targets(
       targets: Seq[String],
       expectedExitCode: Int = 0,
-      env: Map[String, String] = Map()
+      env: Map[String, String] = Map(),
+      noServer: Boolean = false
   ) extends TestInvocation {
     override def toString: String =
       getClass().getSimpleName() +
         "(targets=" + targets +
         ",expectedExitCode=" + expectedExitCode +
-        ",env=" + env
+        ",env=" + env +
+        ",noServer=" + noServer +
         ")"
   }
 
