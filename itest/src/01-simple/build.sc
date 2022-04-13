@@ -9,7 +9,7 @@ import mill.scalalib.publish.{Developer, License, PomSettings, VersionControl}
 
 trait DemoModule extends ScalaModule with PublishModule {
   override def publishVersion: T[String] = "0.0.1"
-  override def scalaVersion: T[String] = "2.13.2"
+  override def scalaVersion: T[String] = "2.13.3"
   override def pomSettings: T[PomSettings] = PomSettings(
     description = "Demo Module",
     organization = "org.example",
