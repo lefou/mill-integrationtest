@@ -2,16 +2,15 @@ package de.tobiasroeser.mill.integrationtest
 
 import java.nio.file.{CopyOption, LinkOption, StandardCopyOption}
 import java.nio.file.attribute.PosixFilePermission
-
 import scala.util.Try
 import scala.util.control.NonFatal
-
 import mainargs.Flag
 import mill._
 import mill.api.{Ctx, Result}
 import mill.define.{Command, Sources, Target, Task, TaskModule}
 import mill.scalalib._
 import mill.scalalib.publish._
+import os.ProcessOutput.Readlines
 import os.{PathRedirect, ProcessOutput}
 
 /**
@@ -147,7 +146,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
             if (scala.util.Properties.isWin) (
               testPath / "mill.bat",
               s"""set JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
-                 |"${millExe.toIO.getAbsolutePath()}" -i --color false %*
+                 |"${millExe.toIO.getAbsolutePath()}" %*
                  |""".stripMargin,
               null
             )
@@ -155,7 +154,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
               testPath / "mill",
               s"""#!/usr/bin/env sh
                  |export JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
-                 |exec ${millExe.toIO.getAbsolutePath()} -i --color false "$$@"
+                 |exec ${millExe.toIO.getAbsolutePath()} "$$@"
                  |""".stripMargin,
               os.PermSet(0) +
                 PosixFilePermission.OWNER_READ +
@@ -176,7 +175,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
             else {
               log.info(s"Invoking ${logLine}: ${invocation}")
               val result = invocation match {
-                case invocation @ TestInvocation.Targets(targets, expectedExitCode, env) =>
+                case invocation @ TestInvocation.Targets(targets, expectedExitCode, env, noServer) =>
                   val outlog = os.temp(
                     dir = testPath,
                     prefix = "out-",
@@ -185,14 +184,24 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
                   )
                   val pathRedirect = os.PathRedirect(outlog)
 
+                  val millOpts =
+                    // --no-server is better, but not supported in older Mill versions
+                    (if (noServer) Seq("-i") else Seq()) ++
+                      Seq("--color", "false") ++
+                      // -D is only supported since mill verison ???
+                      (if (!noServer) Seq("-D", s"ivy.home=${ivyPath.toIO.getAbsolutePath()}") else Seq())
+
                   // run mill with test targets
                   // ENV=env mill -i testTargets
-                  val result = os.proc(runScript, targets)
+                  val result = os.proc(
+                    runScript,
+                    millOpts,
+                    targets
+                  )
                     .call(
                       cwd = testPath,
                       check = false,
                       stdout = pathRedirect,
-                      // stderr = pathRedirect,
                       mergeErrIntoOut = true,
                       env = env
                     )
@@ -203,6 +212,23 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
                     } else {
                       TestResult.Failed
                     }
+
+                  if (!noServer) {
+                    log.debug(s"Stopping mill server in ${testPath} ...")
+                    // clean possibly running server
+                    try {
+                      os.proc(runScript, millOpts, "shutdown")
+                        .call(
+                          cwd = testPath,
+                          check = false,
+                          stdout = Readlines(_ => ()),
+                          mergeErrIntoOut = true,
+                          env = env
+                        )
+                    } catch {
+                      case NonFatal(_) => // ignore any errors
+                    }
+                  }
 
                   TestInvocationResult(invocation, res, result.out.lines, result.err.lines, Some(outlog))
               }
@@ -363,7 +389,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
   def pluginsUnderTest: Seq[PublishModule]
 
   def transitivePluginsUnderTest: Seq[PublishModule] =
-    pluginsUnderTest.flatMap(_.transitiveModuleDeps).collect{
+    pluginsUnderTest.flatMap(_.transitiveModuleDeps).collect {
       case m: PublishModule => m
     }
 
@@ -375,7 +401,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
   def temporaryIvyModules: Seq[PublishModule] = Seq()
 
   def transitiveTemporaryIvyModules: Seq[PublishModule] =
-    temporaryIvyModules.flatMap(_.transitiveModuleDeps).collect{
+    temporaryIvyModules.flatMap(_.transitiveModuleDeps).collect {
       case m: PublishModule => m
     }
 
