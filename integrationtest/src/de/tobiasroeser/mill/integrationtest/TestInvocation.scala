@@ -7,7 +7,7 @@ object TestInvocation {
       targets: Seq[String],
       expectedExitCode: Int = 0,
       env: Map[String, String] = Map(),
-      noServer: Boolean = false
+      noServer: Boolean = true
   ) extends TestInvocation {
     override def toString: String =
       getClass().getSimpleName() +
