@@ -165,8 +165,10 @@ The `MillIntegrationTestModule` trait provides the following targets:
   Use this target to prepare integration test which should run offline.
 
 .Commands / Action Targets
-* `def test(): Command[Seq[TestCase]]` -
-  Run the integration tests.
+* `def test(args: String*): Command[Seq[TestCase]]` -
+  Run the integration tests. The args here are the actual test cases that will
+  run. By default this will run them all, but it's also possible to just pass
+  the single test name in to run that single test.
 
 * `def testCached: Target[Seq[TestCase]]` -
   Run the integration tests (same as `test`), but only if any input has changed since the last run.
@@ -197,7 +199,7 @@ Use `testInvocations` to configure the targets to execute.
 ----
 def testInvocations = T{
   Seq(
-    pathRefToTest1 -> Seq(
+    PathRef()-> Seq(
       // first mill run
       TestInvocation.Targets(Seq("target1", "target2")),
       // second mill run
@@ -208,6 +210,28 @@ def testInvocations = T{
   )
 }
 ----
+
+=== Run a single defined integration test
+
+Given a setup like this:
+
+[source,scala]
+----
+def testInvocations = T{
+  Seq(
+    PathRef(testBaseDir / "exampleTestDir") -> Seq(
+      TestInvocation.Targets(Seq("target1")),
+    )
+  )
+}
+----
+
+You can run an individual target by passing in the name to `itest`:
+
+[source]
+---
+mill itest exampleTestDir
+---
 
 === Test failing mill targets
 
