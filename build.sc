@@ -1,10 +1,10 @@
 // mill plugins
-import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.5.1`
-import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.1.4`
+import $ivy.`com.lihaoyi::mill-contrib-scoverage:`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.6.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.2.0`
 
+// imports
 import scala.util.matching.Regex
-
 import de.tobiasroeser.mill.integrationtest.{MillIntegrationTestModule, TestCase, TestInvocation}
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
@@ -41,7 +41,7 @@ val millApiCrossVersions = Seq(
 )
 
 object Deps {
-  val scoverageVersion = "1.4.11"
+  val scoverageVersion = "2.0.2"
   val scoveragePlugin = ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion}"
   val scoverageRuntime = ivy"org.scoverage::scalac-scoverage-runtime:${scoverageVersion}"
 }
