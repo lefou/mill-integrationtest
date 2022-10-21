@@ -28,15 +28,15 @@ val millApiCrossVersions = Seq(
   new CrossConfig {
     override def millPlatform = "0.10"
     override def minMillVersion: String = "0.10.0" // scala-steward:off
-    override def scalaVersion = "2.13.8"
-    override def testWithMill: Seq[String] = Seq("0.10.3", "0.10.2", "0.10.1", minMillVersion)
+    override def scalaVersion = "2.13.10"
+    override def testWithMill: Seq[String] = Seq("0.10.8", minMillVersion)
   },
   new CrossConfig {
     override def millPlatform = "0.9"
     override def minMillVersion: String = "0.9.3" // scala-steward:off
-    override def scalaVersion = "2.13.8"
+    override def scalaVersion = "2.13.10"
     override def testWithMill =
-      Seq("0.9.12", "0.9.11", "0.9.10", "0.9.9", "0.9.8", "0.9.7", "0.9.6", "0.9.5", "0.9.4", minMillVersion)
+      Seq("0.9.12", "0.9.8", minMillVersion)
   }
 )
 
