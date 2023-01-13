@@ -26,6 +26,12 @@ sealed trait CrossConfig {
 
 val millApiCrossVersions = Seq(
   new CrossConfig {
+    override def millPlatform = minMillVersion // only valid for exact milestone releases
+    override def minMillVersion: String = "0.11.0-M1" // needs to be an exact milestone release
+    override def scalaVersion = "2.13.10"
+    override def testWithMill: Seq[String] = Seq(minMillVersion)
+  },
+  new CrossConfig {
     override def millPlatform = "0.10"
     override def minMillVersion: String = "0.10.0" // scala-steward:off
     override def scalaVersion = "2.13.10"
@@ -50,15 +56,15 @@ object Deps {
 val matrix = millApiCrossVersions.map(x => x.millPlatform -> x).toMap
 
 object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.map(_.millPlatform): _*)
-class IntegrationtestCross(millPlatfrom: String) extends CrossScalaModule with PublishModule with ScoverageModule {
+class IntegrationtestCross(millPlatform: String) extends CrossScalaModule with PublishModule with ScoverageModule {
   outer =>
-  private val crossConfig = matrix(millPlatfrom)
+  private val crossConfig = matrix(millPlatform)
   override def publishVersion = VcsVersion.vcsState().format()
   override def crossScalaVersion = crossConfig.scalaVersion
   override def artifactSuffix = s"_mill${crossConfig.millPlatform}_${artifactScalaVersion()}"
   override def artifactName = s"de.tobiasroeser.mill.integrationtest"
   override def sources: Sources = T.sources {
-    super.sources() ++ Seq(PathRef(millSourcePath / s"src-${millPlatfrom}"))
+    super.sources() ++ Seq(PathRef(millSourcePath / s"src-${millPlatform.split("[.]").take(2).mkString(".")}"))
   }
 
   override def compileIvyDeps = Agg(
