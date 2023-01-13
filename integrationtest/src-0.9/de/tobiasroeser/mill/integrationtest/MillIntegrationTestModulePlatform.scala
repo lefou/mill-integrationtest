@@ -11,4 +11,8 @@ trait MillIntegrationTestModulePlatform extends OfflineSupportModule { this: Mil
     resolvedPrefetchIvyDeps()
     ()
   }
+
+  def resolvedPrefetchIvyDeps = T {
+    resolveSeparateDeps(prefetchIvyDeps)()
+  }
 }

@@ -14,6 +14,6 @@ trait MillIntegrationTestModulePlatform extends OfflineSupportModule { this: Mil
   }
 
   def resolvedPrefetchIvyDeps = T {
-    resolveSeparateDeps(prefetchIvyDeps)()
+    resolveSeparateDeps(T.task { prefetchIvyDeps().map(bindDependency()) })()
   }
 }

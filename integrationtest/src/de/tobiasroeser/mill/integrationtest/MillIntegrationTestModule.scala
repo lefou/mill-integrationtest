@@ -230,7 +230,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
                     }
                   }
 
-                  TestInvocationResult(invocation, res, result.out.lines, result.err.lines, Some(outlog))
+                  TestInvocationResult(invocation, res, result.out.lines(), result.err.lines(), Some(outlog))
               }
 
               // abort condition
@@ -434,9 +434,6 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    */
   def prefetchIvyDeps: T[Agg[Dep]] = Agg.empty[Dep]
 
-  def resolvedPrefetchIvyDeps = T {
-    resolveSeparateDeps(prefetchIvyDeps)()
-  }
 }
 
 object MillIntegrationTestModule {
