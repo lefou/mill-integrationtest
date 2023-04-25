@@ -118,7 +118,7 @@ val itestMillVersions = millApiCrossVersions.flatMap(x => x.testWithMill.map(_ -
 object itest extends Cross[ItestCross](itestMillVersions.map(_._1): _*) with TaskModule {
   override def defaultCommandName(): String = "test"
   def testCached: T[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).testCached
-  def test(args: String*): Command[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).test()
+  def test(args: String*): Command[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).test(args: _*)
 }
 
 class ItestCross(millVersion: String) extends MillIntegrationTestModule {
