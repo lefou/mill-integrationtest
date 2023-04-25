@@ -1,6 +1,6 @@
 // mill plugins under test
-import $exec.plugins
-import $exec.shared
+import $file.plugins
+import $file.shared
 import de.tobiasroeser.mill.integrationtest._
 import mill._
 import mill.define.Target
