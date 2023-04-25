@@ -27,7 +27,7 @@ sealed trait CrossConfig {
 val millApiCrossVersions = Seq(
   new CrossConfig {
     override def millPlatform = minMillVersion // only valid for exact milestone releases
-    override def minMillVersion: String = "0.11.0-M7" // needs to be an exact milestone release
+    override def minMillVersion: String = "0.11.0-M8" // needs to be an exact milestone release
     override def scalaVersion = "2.13.10"
     override def testWithMill: Seq[String] = Seq(minMillVersion)
   },
