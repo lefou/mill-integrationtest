@@ -84,7 +84,7 @@ you should use the following line, which ensures that you use the correct locall
 [source,scala]
 ----
 // build.sc
-import $exec.plugins
+import $file.plugins
 ----
 
 Effectively, at execution time, this line gets replaced by the content of `plugins.sc`,
