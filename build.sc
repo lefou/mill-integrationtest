@@ -26,8 +26,8 @@ sealed trait CrossConfig {
 
 val millApiCrossVersions = Seq(
   new CrossConfig {
-    override def millPlatform = minMillVersion // only valid for exact milestone releases
-    override def minMillVersion: String = "0.11.0-M7" // needs to be an exact milestone release
+    override def millPlatform = "0.11.0-M8" // only valid for exact milestone releases
+    override def minMillVersion: String = "0.11.0-M8-2-f5e4e2" // needs to be an exact milestone release
     override def scalaVersion = "2.13.10"
     override def testWithMill: Seq[String] = Seq(minMillVersion)
   },
@@ -118,7 +118,7 @@ val itestMillVersions = millApiCrossVersions.flatMap(x => x.testWithMill.map(_ -
 object itest extends Cross[ItestCross](itestMillVersions.map(_._1): _*) with TaskModule {
   override def defaultCommandName(): String = "test"
   def testCached: T[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).testCached
-  def test(args: String*): Command[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).test()
+  def test(args: String*): Command[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).test(args: _*)
 }
 
 class ItestCross(millVersion: String) extends MillIntegrationTestModule {

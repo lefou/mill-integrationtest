@@ -431,13 +431,13 @@ mill core.scoverage.htmlReport
 
 Glad you asked!
 
-`mill-integrationtest` is usings an previously released version of itself to test itself.
+`mill-integrationtest` is using a previously released version of itself to test itself.
 This means we have three levels of `mill-integrationtest`:
 
 1. The project itself, configured in `build.sc`
-2. An proviously released version of `mill-integrationtest` to run the integration tests, configured in cross module `itest` (in `build.sc`).
+2. A previously released version of `mill-integrationtest` to run the integration tests, configured in cross module `itest` (in `build.sc`).
 The cross parameter denotes the Mill version to run the tests against.
-3. And finally the freshly build `mill-integrationtest` plugin under test, used in test cases located under `itest/src`.
+3. And finally the freshly built `mill-integrationtest` plugin under test, used in test cases located under `itest/src`.
 
 This makes understanding the test setup and the build/test output rather hard to read, even for me.
 

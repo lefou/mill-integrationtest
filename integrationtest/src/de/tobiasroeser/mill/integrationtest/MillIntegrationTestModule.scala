@@ -141,7 +141,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
 
           val millExe = downloadMillTestVersion().path
 
-          // also create a runner script, which can be ivoked manually
+          // also create a runner script, which can be invoked manually
           val (runScript, scriptBody, perms) =
             if (scala.util.Properties.isWin) (
               testPath / "mill.bat",
@@ -409,7 +409,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    * Internal target used to trigger required artifacts of the plugins under test.
    * You should not need to use or override this in you buildfile.
    */
-  protected def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
+  protected def pluginUnderTestDetails: Task[Seq[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))]] =
     T.traverse(transitivePluginsUnderTest) { p =>
       p.jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
@@ -419,7 +419,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    * You should not need to use or override this in you buildfile.
    */
   protected def temporaryIvyModulesDetails
-      : Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
+      : Task[Seq[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))]] =
     T.traverse(transitiveTemporaryIvyModules) { p =>
       p.jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
