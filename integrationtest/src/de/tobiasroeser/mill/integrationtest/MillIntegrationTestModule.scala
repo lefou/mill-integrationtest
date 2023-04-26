@@ -141,7 +141,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
 
           val millExe = downloadMillTestVersion().path
 
-          // also create a runner script, which can be ivoked manually
+          // also create a runner script, which can be invoked manually
           val (runScript, scriptBody, perms) =
             if (scala.util.Properties.isWin) (
               testPath / "mill.bat",

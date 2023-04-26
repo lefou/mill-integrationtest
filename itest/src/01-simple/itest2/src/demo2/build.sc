@@ -1,5 +1,5 @@
 // mill plugins under test
-import $exec.plugins
+import $file.plugins
 
 import mill._
 import mill.define.Command
