@@ -87,10 +87,10 @@ you should use the following line, which ensures that you use the correct locall
 import $file.plugins
 ----
 
-Effectively, at execution time, this line gets replaced by the content of `plugins.sc`,
+Effectively, at execution time, Mill is also loading file `plugins.sc`,
 a file which was generated just before the test started to execute.
 It will `$ivy` import all dependencies you listed in `pluginsUnderTest`.
-(If you want to find out how this works, read https://ammonite.io/#import$exec[this])
+(If you want to find out how this works, read https://ammonite.io/#import$file[this])
 
 .Example for a generated `plugins.sc`
 [source,scala]
