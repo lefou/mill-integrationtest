@@ -1,7 +1,7 @@
 // mill plugins
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:`
 import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.7.0`
-import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.3.0`
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.3.1`
 
 // imports
 import scala.util.matching.Regex
