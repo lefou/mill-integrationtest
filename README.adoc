@@ -1,9 +1,9 @@
 = mill-integrationtest - Integration test plugin for mill plugins
-:version: 0.6.1
+:version: 0.7.0
 :mill-platform: 0.10
 :scala-platform: 2.13
 :min-mill-version: 0.9.3
-:example-mill-version: 0.10.3
+:example-mill-version: 0.10.12
 :project-home: https://github.com/lefou/mill-integrationtest
 :scoverage-version: 1.4.11
 :munit-version: 0.7.7
@@ -477,6 +477,7 @@ Newer version of mill may or may not work. (Feel free to update this page via a 
 [options="header"]
 |===
 | mill-integrationtest | mill
+| 0.7.0 | 0.9.x, 0.10.x, 0.11.0-M8
 | 0.6.1 | 0.9.3 - 0.9.x, 0.10.x
 | 0.6.0 | 0.9.3 - 0.9.x, 0.10.x
 | 0.5.1 | 0.9.3 - 0.9.x, 0.10.x
@@ -520,26 +521,32 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 === main branch
 
-=== mill-integrationtest 0.6.1 - 2022-07-11
+=== 0.7.0 - 2023-04-27
+
+* Support for Mill 0.11.0-M8
+* Slight API changes to accommodate to Mill 0.11 (only return values of `pluginUnderTestDetails` and `temoraryIvyModuleDetails`)
+* Minor documentation and internal improvements
+
+=== 0.6.1 - 2022-07-11
 
 * Fixed default value for `TestInvocation.Targets.noServer`
 
-=== mill-integrationtest 0.6.0 - 2022-04-13
+=== 0.6.0 - 2022-04-13
 
 * Support running Mill under test in server mode
 * mill-integrationtest is now also CI tested on Windows
 
-=== mill-integrationtest 0.5.1 - 2022-04-12
+=== 0.5.1 - 2022-04-12
 
 * Fixed non-functional tests under Windows
 
-=== mill-integrationtest 0.5.0 - 2022-03-09
+=== 0.5.0 - 2022-03-09
 
 * Support to specify environment variables for test runs
 * Support `moduleDeps` of tests plugins (to publish them transitively into the test repository)
 * Updated toolchain to use Mill 0.10.1 and newer plugins
 
-=== mill-integrationtest 0.4.2 - 2022-03-08
+=== 0.4.2 - 2022-03-08
 
 * Added support for Mill 0.10
 * Added support for mill milestone versions
@@ -547,23 +554,23 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 * Dependency updates
 * Dropped support for older Mill versions
 
-=== mill-integrationtest 0.4.1 - 2021-06-09
+=== 0.4.1 - 2021-06-09
 
 * Improved output, esp. in error case
 * Added new `perTestResources` target
 * Work around binary compatibility issues with mill 0.9.7
 
-=== mill-integrationtest 0.4.0 - 2020-11-30
+=== 0.4.0 - 2020-11-30
 
 * Added support for mill 0.9.3 while maintaining backward-compatible versions down to mill 0.6.2
 * Introduce a new artifact name suffix (`_mill0.9` for mil 0.9.3) to support multiple mill API versions.
 * Various version bumps: scalatest 3.2.3, scalafmt 2.7.5, scoverage 1.4.2
 
-=== mill-integrationtest 0.3.3 - 2020-07-03
+=== 0.3.3 - 2020-07-03
 
 * New option `showFailedRuns` to always show output of failed runs
 
-=== mill-integrationtest 0.3.2 - 2020-07-03
+=== 0.3.2 - 2020-07-03
 
 * Re-use mill download cache under `~/.cache`
 * Added integration tests
@@ -573,22 +580,22 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 * More documentation
 
 
-=== mill-integrationtest 0.3.1 - 2020-05-19
+=== 0.3.1 - 2020-05-19
 
 * Fixed issues on Windows when setting script permissions
 
-=== mill-integrationtest 0.3.0 - 2020-05-15
+=== 0.3.0 - 2020-05-15
 
 * Cross-publishing for Mill API 0.6.2 (Scala 2.12) and mill API 0.7.0 (Scala 2.13)
 * Use newer mill 0.6.2 API to publish to custom ivy repositories
 * Fixes Windows support
 * Only scan existing source dirs for test cases
 
-=== mill-integrationtest 0.2.1 - 2020-02-27
+=== 0.2.1 - 2020-02-27
 
 * Bumped Mill API to 0.6.0
 
-=== mill-integrationtest 0.2.0 - 2020-02-27
+=== 0.2.0 - 2020-02-27
 
 * Added support to run selective tests
 * Targets `test` and `testCached` no return the test result
@@ -598,15 +605,15 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 * New target `testInvocations` providing much finer control over executed targets and their
   expected exit value
 
-=== mill-integrationtest 0.1.2 - 2020-02-18
+=== 0.1.2 - 2020-02-18
 
 * New target `temporaryIvyModulesDetails`
 * New target `testCached`
 
-=== mill-integrationtest 0.1.1 - 2020-01-08
+=== 0.1.1 - 2020-01-08
 
 * Version bump mill API to 0.5.7
 
-=== mill-integrationtest 0.1.0 - 2019-02-21
+=== 0.1.0 - 2019-02-21
 
 * Initial public release
