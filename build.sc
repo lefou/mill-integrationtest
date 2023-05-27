@@ -83,7 +83,7 @@ class IntegrationtestCross(millPlatform: String) extends CrossScalaModule with P
 
   object test extends Tests with ScoverageTests with TestModule.ScalaTest {
     override def ivyDeps = Agg(
-      ivy"org.scalatest::scalatest:3.2.15",
+      ivy"org.scalatest::scalatest:3.2.16",
       ivy"org.scalatestplus::scalacheck-1-14:3.2.2.0"
     ) ++ outer.compileIvyDeps()
   }
