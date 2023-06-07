@@ -23,24 +23,28 @@ sealed trait CrossConfig {
   def minMillVersion: String
   def scalaVersion: String = "2.13.11"
   def testWithMill: Seq[String] = Seq(minMillVersion)
+  def osLibVersion: String
 }
 
 val millApiCrossVersions = Seq(
   new CrossConfig {
-    override def millPlatform = "0.11.0-M11" // only valid for exact milestone releases
-    override def minMillVersion: String = "0.11.0-M11" // needs to be an exact milestone release
+    override def millPlatform = "0.11"
+    override def minMillVersion: String = "0.11.0" // scala-steward:off
     override def testWithMill: Seq[String] = Seq(minMillVersion)
+    override def osLibVersion: String = "0.9.1"
   },
   new CrossConfig {
     override def millPlatform = "0.10"
     override def minMillVersion: String = "0.10.0" // scala-steward:off
     override def testWithMill: Seq[String] = Seq("0.10.12", minMillVersion)
+    override def osLibVersion: String = "0.8.0"
   },
   new CrossConfig {
     override def millPlatform = "0.9"
     override def minMillVersion: String = "0.9.3" // scala-steward:off
     override def testWithMill =
       Seq("0.9.12", "0.9.8", minMillVersion)
+    override def osLibVersion: String = "0.7.1"
   }
 )
 
@@ -67,7 +71,7 @@ class IntegrationtestCross(millPlatform: String) extends CrossScalaModule with P
 
   override def compileIvyDeps = Agg(
     // scala-steward:off
-    ivy"com.lihaoyi::os-lib:0.7.1",
+    ivy"com.lihaoyi::os-lib:${crossConfig.osLibVersion}",
     ivy"com.lihaoyi::mill-main:${crossConfig.minMillVersion}",
     ivy"com.lihaoyi::mill-scalalib:${crossConfig.minMillVersion}"
     // scala-steward:on
