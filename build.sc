@@ -1,6 +1,6 @@
 // mill plugins
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:`
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.7.0`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.7.0-9-a2b201`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.0`
 
 // imports
@@ -16,7 +16,7 @@ import os.Path
 import scala.util.Properties
 
 val baseDir: os.Path = build.millSourcePath
-val rtMillVersion = build.version
+val rtMillVersion = build.version()
 
 sealed trait CrossConfig {
   def millPlatform: String
@@ -57,9 +57,12 @@ object Deps {
 // Tuple: Mill platform -> CrossConfig
 val matrix = millApiCrossVersions.map(x => x.millPlatform -> x).toMap
 
-object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.map(_.millPlatform): _*)
-class IntegrationtestCross(millPlatform: String) extends CrossScalaModule with PublishModule with ScoverageModule {
+object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.map(_.millPlatform))
+trait IntegrationtestCross extends CrossScalaModule with PublishModule with ScoverageModule with Cross.Module[String] {
   outer =>
+
+  def millPlatform = crossValue
+
   private val crossConfig = matrix(millPlatform)
   override def publishVersion = VcsVersion.vcsState().format()
   override def crossScalaVersion = crossConfig.scalaVersion
@@ -83,7 +86,7 @@ class IntegrationtestCross(millPlatform: String) extends CrossScalaModule with P
     Deps.scoveragePlugin
   }
 
-  object test extends Tests with ScoverageTests with TestModule.ScalaTest {
+  object test extends ScalaModuleTests with ScoverageTests with TestModule.ScalaTest {
     override def ivyDeps = Agg(
       ivy"org.scalatest::scalatest:3.2.16",
       ivy"org.scalatestplus::scalacheck-1-16:3.2.14.0"
@@ -120,13 +123,14 @@ class IntegrationtestCross(millPlatform: String) extends CrossScalaModule with P
 // Tuple: Mill version -> CrossConfig
 val itestMillVersions = millApiCrossVersions.flatMap(x => x.testWithMill.map(_ -> x))
 
-object itest extends Cross[ItestCross](itestMillVersions.map(_._1): _*) with TaskModule {
+object itest extends Cross[ItestCross](itestMillVersions.map(_._1)) with TaskModule {
   override def defaultCommandName(): String = "test"
   def testCached: T[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).testCached
   def test(args: String*): Command[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).test(args: _*)
 }
 
-class ItestCross(millVersion: String) extends MillIntegrationTestModule {
+trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
+  def millVersion = crossValue
   // correct cross level
   private val crossConfig = itestMillVersions.toMap.apply(millVersion)
   override def millSourcePath: Path = super.millSourcePath / os.up
@@ -143,7 +147,7 @@ class ItestCross(millVersion: String) extends MillIntegrationTestModule {
   )
 
   /** Replaces the plugin jar with a scoverage-enhanced version of it. */
-  override def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
+  override def pluginUnderTestDetails: Task[Seq[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))]] =
     Target.traverse(pluginsUnderTest) { p =>
       val jar = p match {
         case p: ScoverageModule => p.scoverage.jar
