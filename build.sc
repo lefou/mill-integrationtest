@@ -13,6 +13,7 @@ import mill.define.{Command, Sources, Target, Task, TaskModule}
 import mill.scalalib._
 import mill.scalalib.publish._
 import os.Path
+import scala.util.Properties
 
 val baseDir: os.Path = build.millSourcePath
 val rtMillVersion = build.version
@@ -20,27 +21,24 @@ val rtMillVersion = build.version
 sealed trait CrossConfig {
   def millPlatform: String
   def minMillVersion: String
-  def scalaVersion: String
+  def scalaVersion: String = "2.13.11"
   def testWithMill: Seq[String] = Seq(minMillVersion)
 }
 
 val millApiCrossVersions = Seq(
   new CrossConfig {
-    override def millPlatform = "0.11.0-M10" // only valid for exact milestone releases
-    override def minMillVersion: String = "0.11.0-M10" // needs to be an exact milestone release
-    override def scalaVersion = "2.13.10"
+    override def millPlatform = "0.11.0-M11" // only valid for exact milestone releases
+    override def minMillVersion: String = "0.11.0-M11" // needs to be an exact milestone release
     override def testWithMill: Seq[String] = Seq(minMillVersion)
   },
   new CrossConfig {
     override def millPlatform = "0.10"
     override def minMillVersion: String = "0.10.0" // scala-steward:off
-    override def scalaVersion = "2.13.10"
     override def testWithMill: Seq[String] = Seq("0.10.12", minMillVersion)
   },
   new CrossConfig {
     override def millPlatform = "0.9"
     override def minMillVersion: String = "0.9.3" // scala-steward:off
-    override def scalaVersion = "2.13.10"
     override def testWithMill =
       Seq("0.9.12", "0.9.8", minMillVersion)
   }
@@ -88,8 +86,11 @@ class IntegrationtestCross(millPlatform: String) extends CrossScalaModule with P
     ) ++ outer.compileIvyDeps()
   }
 
-  override def javacOptions = Seq("-source", "1.8", "-target", "1.8", "-encoding", "UTF-8")
-  override def scalacOptions = Seq("-target:jvm-1.8", "-encoding", "UTF-8", "-deprecation")
+  override def javacOptions =
+    (if (Properties.isJavaAtLeast(9)) Seq()
+     else Seq("-source", "1.8", "-target", "1.8")) ++
+      Seq("-encoding", "UTF-8", "-deprecation")
+  override def scalacOptions = Seq("-release", "8", "-encoding", "UTF-8", "-deprecation")
 
   override def pomSettings = PomSettings(
     description = "A integration test module useful for mill module development",
