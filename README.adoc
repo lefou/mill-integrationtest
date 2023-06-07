@@ -1,9 +1,9 @@
 = mill-integrationtest - Integration test plugin for mill plugins
-:version: 0.7.0
-:mill-platform: 0.10
+:version: 0.7.1
+:mill-platform: 0.11
 :scala-platform: 2.13
 :min-mill-version: 0.9.3
-:example-mill-version: 0.10.12
+:example-mill-version: 0.11.0
 :project-home: https://github.com/lefou/mill-integrationtest
 :scoverage-version: 1.4.11
 :munit-version: 0.7.7
@@ -523,7 +523,10 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 == Changelog
 
-=== main branch
+=== 0.7.1 - 2023-06-07
+
+* Support for Mill 0.11 API
+* Update Scala to 2.13.11
 
 === 0.7.0 - 2023-04-27
 
