@@ -1,7 +1,7 @@
 // mill plugins
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:`
 import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.7.1`
-import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.3.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.0`
 
 // imports
 import scala.util.matching.Regex
@@ -86,7 +86,7 @@ class IntegrationtestCross(millPlatform: String) extends CrossScalaModule with P
   object test extends Tests with ScoverageTests with TestModule.ScalaTest {
     override def ivyDeps = Agg(
       ivy"org.scalatest::scalatest:3.2.16",
-      ivy"org.scalatestplus::scalacheck-1-15:3.2.11.0"
+      ivy"org.scalatestplus::scalacheck-1-16:3.2.14.0"
     ) ++ outer.compileIvyDeps()
   }
 
