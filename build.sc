@@ -15,8 +15,8 @@ import mill.scalalib.publish._
 import os.Path
 import scala.util.Properties
 
-val baseDir: os.Path = build.millSourcePath
-val rtMillVersion = build.version()
+lazy val baseDir: os.Path = build.millSourcePath
+lazy val rtMillVersion = build.version()
 
 sealed trait CrossConfig {
   def millPlatform: String
@@ -68,7 +68,7 @@ trait IntegrationtestCross extends CrossScalaModule with PublishModule with Scov
   override def crossScalaVersion = crossConfig.scalaVersion
   override def artifactSuffix = s"_mill${crossConfig.millPlatform}_${artifactScalaVersion()}"
   override def artifactName = s"de.tobiasroeser.mill.integrationtest"
-  override def sources: Sources = T.sources {
+  override def sources = T.sources {
     super.sources() ++ Seq(PathRef(millSourcePath / s"src-${millPlatform.split("[.]").take(2).mkString(".")}"))
   }
 
@@ -81,10 +81,6 @@ trait IntegrationtestCross extends CrossScalaModule with PublishModule with Scov
   )
 
   override def scoverageVersion = Deps.scoverageVersion
-  // we need to adapt to changed publishing policy - patch-level
-  override def scoveragePluginDep = T {
-    Deps.scoveragePlugin
-  }
 
   object test extends ScalaModuleTests with ScoverageTests with TestModule.ScalaTest {
     override def ivyDeps = Agg(
@@ -110,7 +106,7 @@ trait IntegrationtestCross extends CrossScalaModule with PublishModule with Scov
     )
   )
 
-  override def resources: Sources = T.sources {
+  override def resources = T.sources {
     super.resources() ++ Seq(
       PathRef(millSourcePath / os.up / "README.adoc"),
       PathRef(millSourcePath / os.up / "LICENSE")
@@ -133,7 +129,6 @@ trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
   def millVersion = crossValue
   // correct cross level
   private val crossConfig = itestMillVersions.toMap.apply(millVersion)
-  override def millSourcePath: Path = super.millSourcePath / os.up
   override def pluginsUnderTest: Seq[PublishModule] = Seq(integrationtest(crossConfig.millPlatform))
   override def millTestVersion: T[String] = millVersion
 
@@ -174,7 +169,7 @@ object P extends Module {
    * Update the millw script.
    */
   def millw() = T.command {
-    val target = mill.modules.Util.download("https://raw.githubusercontent.com/lefou/millw/master/millw")
+    val target = mill.util.Util.download("https://raw.githubusercontent.com/lefou/millw/master/millw")
     val millw = baseDir / "millw"
     val res = os.proc(
       "sed",
