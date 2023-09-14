@@ -49,7 +49,7 @@ val millApiCrossVersions = Seq(
 )
 
 object Deps {
-  val scoverageVersion = "2.0.10"
+  val scoverageVersion = "2.0.11"
   val scoveragePlugin = ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion}"
   val scoverageRuntime = ivy"org.scoverage::scalac-scoverage-runtime:${scoverageVersion}"
 }
@@ -84,7 +84,7 @@ trait IntegrationtestCross extends CrossScalaModule with PublishModule with Scov
 
   object test extends ScalaModuleTests with ScoverageTests with TestModule.ScalaTest {
     override def ivyDeps = Agg(
-      ivy"org.scalatest::scalatest:3.2.16",
+      ivy"org.scalatest::scalatest:3.2.17",
       ivy"org.scalatestplus::scalacheck-1-16:3.2.14.0"
     ) ++ outer.compileIvyDeps()
   }
