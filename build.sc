@@ -84,7 +84,7 @@ trait IntegrationtestCross extends CrossScalaModule with PublishModule with Scov
 
   object test extends ScalaModuleTests with ScoverageTests with TestModule.ScalaTest {
     override def ivyDeps = Agg(
-      ivy"org.scalatest::scalatest:3.2.17",
+      ivy"org.scalatest::scalatest:3.2.18",
       ivy"org.scalatestplus::scalacheck-1-16:3.2.14.0"
     ) ++ outer.compileIvyDeps()
   }
