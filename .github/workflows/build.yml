@@ -38,7 +38,7 @@ jobs:
         if: matrix.os == 'windows-latest'
 
       - name: Upload scoverage reports to codecov.io
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./out/integrationtest/0.11.0-M11/scoverage/xmlReport.dest/scoverage.xml,./out/integrationtest/0.10/scoverage/xmlReport.dest/scoverage.xml,./out/integrationtest/0.9/scoverage/xmlReport.dest/scoverage.xml
         continue-on-error: true
