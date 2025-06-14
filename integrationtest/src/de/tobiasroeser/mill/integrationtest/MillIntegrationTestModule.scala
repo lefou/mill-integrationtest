@@ -384,7 +384,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    * You can also add additional libraries, e.g. those that assist you in the test result validation (e.g. a local test support project).
    * The defined modules will be published into a temporary ivy repository before the tests are executed.
    * In your test `build.sc` file, instead of the typical `import $ivy.` line,
-   * you should use `import $exec.plugins` to include all plugins that are defined here.
+   * you should use `import $file.plugins` to include all plugins that are defined here.
    */
   def pluginsUnderTest: Seq[PublishModule]
 
