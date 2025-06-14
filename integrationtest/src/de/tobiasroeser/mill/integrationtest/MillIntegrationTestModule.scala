@@ -418,8 +418,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    * Internal target used to trigger required artifacts of the plugins under test.
    * You should not need to use or override this in you buildfile.
    */
-  protected def temporaryIvyModulesDetails
-      : Task[Seq[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))]] =
+  protected def temporaryIvyModulesDetails: Task[Seq[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))]] =
     T.traverse(transitiveTemporaryIvyModules) { p =>
       p.jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
