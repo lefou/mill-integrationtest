@@ -9,7 +9,7 @@ import de.tobiasroeser.mill.integrationtest.{MillIntegrationTestModule, TestCase
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 import mill._
 import mill.contrib.scoverage.ScoverageModule
-import mill.define.{Command, Sources, Target, Task, TaskModule}
+import mill.define.{Command, Target, Task, TaskModule}
 import mill.scalalib._
 import mill.scalalib.publish._
 import os.Path
