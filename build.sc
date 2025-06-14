@@ -150,6 +150,8 @@ trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
       // test with debug print and explicit test target
       TestInvocation.Targets(Seq("-d", "itest[0.11.0].test")),
       TestInvocation.Targets(Seq("-d", "itest[0.11.13].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.12.0].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.12.14].test")),
       // test default target
       TestInvocation.Targets(Seq("itest2"))
     )

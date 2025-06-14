@@ -97,16 +97,9 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
 
     val artifactMetadata = Target.sequence(pluginsUnderTest.map(_.artifactMetadata))()
 
-    val millVersion = millTestVersion()
-    println(s"Mill version: ${millVersion}")
-    val isMill_0_12_orNewer = millVersion.startsWith("0.12") ||
-      millVersion.startsWith("0.13") ||
-      !millVersion.startsWith("0.")
+    val millTestVersion_ = millTestVersion()
+    println(s"Mill version: ${millTestVersion_}")
 
-    val coursierReposEnv =
-      if (isMill_0_12_orNewer)
-        s"env COURSIER_REPOSITORIES=ivy:${ivyPath.toNIO.toUri().toURL().toExternalForm().stripSuffix("/")}"
-      else ""
 
     val importFileContents = {
       val imports = artifactMetadata.map { dep =>
@@ -165,7 +158,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
               testPath / "mill",
               s"""#!/usr/bin/env sh
                  |export JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
-                 |exec ${coursierReposEnv} ${millExe.toIO.getAbsolutePath()} "$$@"
+                 |exec ${millExe.toIO.getAbsolutePath()} "$$@"
                  |""".stripMargin,
               os.PermSet(0) +
                 PosixFilePermission.OWNER_READ +
