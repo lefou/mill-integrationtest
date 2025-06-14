@@ -372,7 +372,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
 
   /**
    * The test invocations to test the project.
-   * Defaults to run `TestIncokation.Targets` with the targets from [[testTargets]] and expecting successful execution.
+   * Defaults to run `TestInvokation.Targets` with the targets from [[testTargets]] and expecting successful execution.
    */
   def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
     testCases().map(tc => tc -> Seq(TestInvocation.Targets(testTargets())))
