@@ -30,7 +30,7 @@ val millApiCrossVersions = Seq(
   new CrossConfig {
     override def millPlatform = "0.11"
     override def minMillVersion: String = "0.11.0" // scala-steward:off
-    override def testWithMill: Seq[String] = Seq("0.11.13", minMillVersion)
+    override def testWithMill: Seq[String] = Seq("0.11.13", "0.12.13", minMillVersion)
     override def osLibVersion: String = "0.9.1"
   },
   new CrossConfig {
@@ -42,8 +42,7 @@ val millApiCrossVersions = Seq(
   new CrossConfig {
     override def millPlatform = "0.9"
     override def minMillVersion: String = "0.9.3" // scala-steward:off
-    override def testWithMill =
-      Seq("0.9.12", "0.9.8", minMillVersion)
+    override def testWithMill = Seq("0.9.12", minMillVersion)
     override def osLibVersion: String = "0.7.1"
   }
 )
@@ -132,14 +131,44 @@ trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
   override def pluginsUnderTest: Seq[PublishModule] = Seq(integrationtest(crossConfig.millPlatform))
   override def millTestVersion: T[String] = millVersion
 
-  override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = Seq(
-    PathRef(millSourcePath / "src" / "01-simple") -> Seq(
+  val setup = Map(
+    "mill-0.9" -> Seq(
       // test with debug print and explicit test target
-      TestInvocation.Targets(Seq("-d", "itest.test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.9.3].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.9.12].test")),
+      // test default target
+      TestInvocation.Targets(Seq("itest2"))
+    ),
+    "mill-0.10" -> Seq(
+      // test with debug print and explicit test target
+      TestInvocation.Targets(Seq("-d", "itest[0.10.0].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.10.15].test")),
+      // test default target
+      TestInvocation.Targets(Seq("itest2"))
+    ),
+    "mill-0.11" -> Seq(
+      // test with debug print and explicit test target
+      TestInvocation.Targets(Seq("-d", "itest[0.11.0].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.11.13].test")),
       // test default target
       TestInvocation.Targets(Seq("itest2"))
     )
+
   )
+
+  override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
+    val whiteList = millVersion match {
+      case s"0.9.$_" => Seq("mill-0.9")
+      case s"0.10.$_" => Seq("mill-0.10", "mill-0.9")
+      case s"0.11.$_" => Seq("mill-0.11")
+    }
+
+    super.testInvocations().flatMap { ti =>
+      val dir = ti._1.path.last
+      if (whiteList.contains(dir)) Seq(ti._1 -> setup(dir))
+      else Seq()
+    }
+  }
 
   /** Replaces the plugin jar with a scoverage-enhanced version of it. */
   override def pluginUnderTestDetails: Task[Seq[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))]] =
