@@ -1,7 +1,7 @@
 // mill plugins
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:`
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.7.0`
-import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.3.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.7.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1`
 
 // imports
 import scala.util.matching.Regex
@@ -13,41 +13,43 @@ import mill.define.{Command, Sources, Target, Task, TaskModule}
 import mill.scalalib._
 import mill.scalalib.publish._
 import os.Path
+import scala.util.Properties
 
-val baseDir: os.Path = build.millSourcePath
-val rtMillVersion = build.version
+lazy val baseDir: os.Path = build.millSourcePath
+lazy val rtMillVersion = build.version()
 
 sealed trait CrossConfig {
   def millPlatform: String
   def minMillVersion: String
-  def scalaVersion: String
+  def scalaVersion: String = "2.13.15"
   def testWithMill: Seq[String] = Seq(minMillVersion)
+  def osLibVersion: String
 }
 
 val millApiCrossVersions = Seq(
   new CrossConfig {
-    override def millPlatform = "0.11.0-M8" // only valid for exact milestone releases
-    override def minMillVersion: String = "0.11.0-M8-2-f5e4e2" // needs to be an exact milestone release
-    override def scalaVersion = "2.13.10"
-    override def testWithMill: Seq[String] = Seq(minMillVersion)
+    override def millPlatform = "0.11"
+    override def minMillVersion: String = "0.11.0" // scala-steward:off
+    override def testWithMill: Seq[String] = Seq("0.11.13", minMillVersion)
+    override def osLibVersion: String = "0.9.1"
   },
   new CrossConfig {
     override def millPlatform = "0.10"
     override def minMillVersion: String = "0.10.0" // scala-steward:off
-    override def scalaVersion = "2.13.10"
-    override def testWithMill: Seq[String] = Seq("0.10.8", minMillVersion)
+    override def testWithMill: Seq[String] = Seq("0.10.12", minMillVersion)
+    override def osLibVersion: String = "0.8.0"
   },
   new CrossConfig {
     override def millPlatform = "0.9"
     override def minMillVersion: String = "0.9.3" // scala-steward:off
-    override def scalaVersion = "2.13.10"
     override def testWithMill =
       Seq("0.9.12", "0.9.8", minMillVersion)
+    override def osLibVersion: String = "0.7.1"
   }
 )
 
 object Deps {
-  val scoverageVersion = "2.0.8"
+  val scoverageVersion = "2.3.0"
   val scoveragePlugin = ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion}"
   val scoverageRuntime = ivy"org.scoverage::scalac-scoverage-runtime:${scoverageVersion}"
 }
@@ -55,41 +57,43 @@ object Deps {
 // Tuple: Mill platform -> CrossConfig
 val matrix = millApiCrossVersions.map(x => x.millPlatform -> x).toMap
 
-object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.map(_.millPlatform): _*)
-class IntegrationtestCross(millPlatform: String) extends CrossScalaModule with PublishModule with ScoverageModule {
+object integrationtest extends Cross[IntegrationtestCross](millApiCrossVersions.map(_.millPlatform))
+trait IntegrationtestCross extends CrossScalaModule with PublishModule with ScoverageModule with Cross.Module[String] {
   outer =>
+
+  def millPlatform = crossValue
+
   private val crossConfig = matrix(millPlatform)
   override def publishVersion = VcsVersion.vcsState().format()
   override def crossScalaVersion = crossConfig.scalaVersion
   override def artifactSuffix = s"_mill${crossConfig.millPlatform}_${artifactScalaVersion()}"
   override def artifactName = s"de.tobiasroeser.mill.integrationtest"
-  override def sources: Sources = T.sources {
+  override def sources = T.sources {
     super.sources() ++ Seq(PathRef(millSourcePath / s"src-${millPlatform.split("[.]").take(2).mkString(".")}"))
   }
 
   override def compileIvyDeps = Agg(
     // scala-steward:off
-    ivy"com.lihaoyi::os-lib:0.7.1",
+    ivy"com.lihaoyi::os-lib:${crossConfig.osLibVersion}",
     ivy"com.lihaoyi::mill-main:${crossConfig.minMillVersion}",
     ivy"com.lihaoyi::mill-scalalib:${crossConfig.minMillVersion}"
     // scala-steward:on
   )
 
   override def scoverageVersion = Deps.scoverageVersion
-  // we need to adapt to changed publishing policy - patch-level
-  override def scoveragePluginDep = T {
-    Deps.scoveragePlugin
-  }
 
-  object test extends Tests with ScoverageTests with TestModule.ScalaTest {
+  object test extends ScalaModuleTests with ScoverageTests with TestModule.ScalaTest {
     override def ivyDeps = Agg(
-      ivy"org.scalatest::scalatest:3.2.15",
-      ivy"org.scalatestplus::scalacheck-1-14:3.2.2.0"
+      ivy"org.scalatest::scalatest:3.2.19",
+      ivy"org.scalatestplus::scalacheck-1-16:3.2.14.0"
     ) ++ outer.compileIvyDeps()
   }
 
-  override def javacOptions = Seq("-source", "1.8", "-target", "1.8", "-encoding", "UTF-8")
-  override def scalacOptions = Seq("-target:jvm-1.8", "-encoding", "UTF-8", "-deprecation")
+  override def javacOptions =
+    (if (Properties.isJavaAtLeast(9)) Seq()
+     else Seq("-source", "1.8", "-target", "1.8")) ++
+      Seq("-encoding", "UTF-8", "-deprecation")
+  override def scalacOptions = Seq("-release", "8", "-encoding", "UTF-8", "-deprecation")
 
   override def pomSettings = PomSettings(
     description = "A integration test module useful for mill module development",
@@ -102,7 +106,7 @@ class IntegrationtestCross(millPlatform: String) extends CrossScalaModule with P
     )
   )
 
-  override def resources: Sources = T.sources {
+  override def resources = T.sources {
     super.resources() ++ Seq(
       PathRef(millSourcePath / os.up / "README.adoc"),
       PathRef(millSourcePath / os.up / "LICENSE")
@@ -115,16 +119,16 @@ class IntegrationtestCross(millPlatform: String) extends CrossScalaModule with P
 // Tuple: Mill version -> CrossConfig
 val itestMillVersions = millApiCrossVersions.flatMap(x => x.testWithMill.map(_ -> x))
 
-object itest extends Cross[ItestCross](itestMillVersions.map(_._1): _*) with TaskModule {
+object itest extends Cross[ItestCross](itestMillVersions.map(_._1)) with TaskModule {
   override def defaultCommandName(): String = "test"
   def testCached: T[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).testCached
   def test(args: String*): Command[Seq[TestCase]] = itest(itestMillVersions.map(_._1).head).test(args: _*)
 }
 
-class ItestCross(millVersion: String) extends MillIntegrationTestModule {
+trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
+  def millVersion = crossValue
   // correct cross level
   private val crossConfig = itestMillVersions.toMap.apply(millVersion)
-  override def millSourcePath: Path = super.millSourcePath / os.up
   override def pluginsUnderTest: Seq[PublishModule] = Seq(integrationtest(crossConfig.millPlatform))
   override def millTestVersion: T[String] = millVersion
 
@@ -138,7 +142,7 @@ class ItestCross(millVersion: String) extends MillIntegrationTestModule {
   )
 
   /** Replaces the plugin jar with a scoverage-enhanced version of it. */
-  override def pluginUnderTestDetails: Task.Sequence[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))] =
+  override def pluginUnderTestDetails: Task[Seq[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))]] =
     Target.traverse(pluginsUnderTest) { p =>
       val jar = p match {
         case p: ScoverageModule => p.scoverage.jar
@@ -165,7 +169,7 @@ object P extends Module {
    * Update the millw script.
    */
   def millw() = T.command {
-    val target = mill.modules.Util.download("https://raw.githubusercontent.com/lefou/millw/master/millw")
+    val target = mill.util.Util.download("https://raw.githubusercontent.com/lefou/millw/master/millw")
     val millw = baseDir / "millw"
     val res = os.proc(
       "sed",
