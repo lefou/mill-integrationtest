@@ -13,6 +13,9 @@ import mill.scalalib.publish._
 import os.ProcessOutput.Readlines
 import os.{PathRedirect, ProcessOutput}
 
+import scala.annotation.nowarn
+import scala.util.chaining.scalaUtilChainingOps
+
 /**
  * Run Integration test for Mill Plugins.
  */
@@ -100,12 +103,23 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
     val artifactMetadata = Target.sequence(pluginsUnderTest.map(_.artifactMetadata))()
 
     val importFileContents = {
-      val header = Seq("// Import a locally published version of the plugin under test")
-      val body = artifactMetadata.map { meta =>
+      val imports = artifactMetadata.map { meta =>
         s"import $$ivy.`${meta.group}:${meta.id}:${meta.version}`"
       }
-      header ++ body
-    }.mkString("\n")
+      val ivyRepoAsUrl =
+        s"ivy:${ivyPath.toNIO.toUri().toURL().toExternalForm().pipe { url =>
+          if (url.endsWith("/")) url.substring(0, url.size - 1)
+          else url
+        }.pipe { url =>
+          if(url.startsWith("file:") && !url.startsWith("file://")) ("file://" + url.substring("file:".length))
+          else url
+        }}/local/[organisation]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]"
+      s"""// Define a local repository containing the plugin under test
+         |import $$repo.`${ivyRepoAsUrl}`
+         |// Import a locally published version of the plugin under test
+         |${imports.mkString("\n")}
+         |""".stripMargin
+    }
 
     val testCases = testInvocations()
     //    val testInvocationsMap: Map[PathRef, TestInvocation.Targets] = testCases.toMap
@@ -137,6 +151,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
           }
 
           // Write the plugins.sc file
+          println(importFileContents)
           os.write(testPath / "plugins.sc", importFileContents)
 
           val millExe = downloadMillTestVersion().path
@@ -145,15 +160,13 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
           val (runScript, scriptBody, perms) =
             if (scala.util.Properties.isWin) (
               testPath / "mill.bat",
-              s"""set JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
-                 |"${millExe.toIO.getAbsolutePath()}" %*
+              s""""${millExe.toIO.getAbsolutePath()}" %*
                  |""".stripMargin,
               null
             )
             else (
               testPath / "mill",
               s"""#!/usr/bin/env sh
-                 |export JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
                  |exec ${millExe.toIO.getAbsolutePath()} "$$@"
                  |""".stripMargin,
               os.PermSet(0) +
@@ -187,10 +200,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
                   val millOpts =
                     // --no-server is better, but not supported in older Mill versions
                     (if (noServer) Seq("-i") else Seq()) ++
-                      Seq("--color", "false") ++
-                      // -D is only supported since mill verison ???
-                      (if (!noServer) Seq("-D", s"ivy.home=${ivyPath.toIO.getAbsolutePath()}") else Seq())
-
+                      Seq("--color", "false")
                   // run mill with test targets
                   // ENV=env mill -i testTargets
                   val result = os.proc(
@@ -375,7 +385,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    * Defaults to run `TestIncokation.Targets` with the targets from [[testTargets]] and expecting successful execution.
    */
   def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
-    testCases().map(tc => tc -> Seq(TestInvocation.Targets(testTargets())))
+    testCases().map(tc => tc -> Seq(TestInvocation.Targets(testTargets(): @nowarn)))
   }
 
   /**
@@ -418,8 +428,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    * Internal target used to trigger required artifacts of the plugins under test.
    * You should not need to use or override this in you buildfile.
    */
-  protected def temporaryIvyModulesDetails
-      : Task[Seq[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))]] =
+  protected def temporaryIvyModulesDetails: Task[Seq[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))]] =
     T.traverse(transitiveTemporaryIvyModules) { p =>
       p.jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }
