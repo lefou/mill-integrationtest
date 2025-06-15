@@ -1,4 +1,4 @@
-// A project targeting Mill 0.9.3, testing against Mill 0.9.3 and latest 0.9.x
+// A project targeting Mill 0.9.12, testing against Mill 0.9.3 and latest 0.9.x
 
 // mill plugins under test
 import $file.plugins
@@ -47,7 +47,7 @@ class ItestCross(mv: String) extends Itest {
         TestInvocation.Targets(Seq("-d", "fail"), 1),
         TestInvocation.Targets(Seq("checkEnv"), 1),
         TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = true),
-        TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = false),
+        TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = false)
       )
     )
   }
@@ -56,5 +56,5 @@ class ItestCross(mv: String) extends Itest {
 
 // try to run with most defaults
 object itest2 extends Itest {
-  def millTestVersion = "0.9.3"
+  def millTestVersion = "0.9.12"
 }
