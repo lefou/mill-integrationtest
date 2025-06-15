@@ -4,14 +4,12 @@ import java.nio.file.{CopyOption, LinkOption, StandardCopyOption}
 import java.nio.file.attribute.PosixFilePermission
 import scala.util.Try
 import scala.util.control.NonFatal
-import mainargs.Flag
 import mill._
-import mill.api.{Ctx, Result}
+import mill.api.Result
 import mill.define.{Command, Sources, Target, Task, TaskModule}
 import mill.scalalib._
 import mill.scalalib.publish._
 import os.ProcessOutput.Readlines
-import os.{PathRedirect, ProcessOutput}
 
 /**
  * Run Integration test for Mill Plugins.
@@ -99,13 +97,26 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
 
     val artifactMetadata = Target.sequence(pluginsUnderTest.map(_.artifactMetadata))()
 
+    val millVersion = millTestVersion()
+    println(s"Mill version: ${millVersion}")
+    val isMill_0_12_orNewer = millVersion.startsWith("0.12") ||
+      millVersion.startsWith("0.13") ||
+      !millVersion.startsWith("0.")
+
+    val coursierReposEnv =
+      if (isMill_0_12_orNewer)
+        s"env COURSIER_REPOSITORIES=ivy:${ivyPath.toNIO.toUri().toURL().toExternalForm().stripSuffix("/")}"
+      else ""
+
     val importFileContents = {
-      val header = Seq("// Import a locally published version of the plugin under test")
-      val body = artifactMetadata.map { meta =>
-        s"import $$ivy.`${meta.group}:${meta.id}:${meta.version}`"
+      val imports = artifactMetadata.map { dep =>
+        s"import $$ivy.`${dep.group}:${dep.id}:${dep.version}`"
       }
-      header ++ body
-    }.mkString("\n")
+
+      s"""|// Import a locally published version of the plugin under test
+          |${imports.mkString("\n")}
+          |""".stripMargin
+    }
 
     val testCases = testInvocations()
     //    val testInvocationsMap: Map[PathRef, TestInvocation.Targets] = testCases.toMap
@@ -154,7 +165,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
               testPath / "mill",
               s"""#!/usr/bin/env sh
                  |export JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
-                 |exec ${millExe.toIO.getAbsolutePath()} "$$@"
+                 |exec ${coursierReposEnv} ${millExe.toIO.getAbsolutePath()} "$$@"
                  |""".stripMargin,
               os.PermSet(0) +
                 PosixFilePermission.OWNER_READ +
@@ -184,12 +195,11 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
                   )
                   val pathRedirect = os.PathRedirect(outlog)
 
-                  val millOpts =
-                    // --no-server is better, but not supported in older Mill versions
-                    (if (noServer) Seq("-i") else Seq()) ++
+                  val millOpts = {
+                    Option.when(noServer)("--no-server").toSeq ++
                       Seq("--color", "false") ++
-                      // -D is only supported since mill verison ???
-                      (if (!noServer) Seq("-D", s"ivy.home=${ivyPath.toIO.getAbsolutePath()}") else Seq())
+                      Seq("-D", s"ivy.home=${ivyPath.toIO.getAbsolutePath()}")
+                  }
 
                   // run mill with test targets
                   // ENV=env mill -i testTargets
@@ -372,7 +382,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
 
   /**
    * The test invocations to test the project.
-   * Defaults to run `TestIncokation.Targets` with the targets from [[testTargets]] and expecting successful execution.
+   * Defaults to run `TestInvokation.Targets` with the targets from [[testTargets]] and expecting successful execution.
    */
   def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
     testCases().map(tc => tc -> Seq(TestInvocation.Targets(testTargets())))
@@ -384,7 +394,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    * You can also add additional libraries, e.g. those that assist you in the test result validation (e.g. a local test support project).
    * The defined modules will be published into a temporary ivy repository before the tests are executed.
    * In your test `build.sc` file, instead of the typical `import $ivy.` line,
-   * you should use `import $exec.plugins` to include all plugins that are defined here.
+   * you should use `import $file.plugins` to include all plugins that are defined here.
    */
   def pluginsUnderTest: Seq[PublishModule]
 
@@ -418,8 +428,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    * Internal target used to trigger required artifacts of the plugins under test.
    * You should not need to use or override this in you buildfile.
    */
-  protected def temporaryIvyModulesDetails
-      : Task[Seq[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))]] =
+  protected def temporaryIvyModulesDetails: Task[Seq[(PathRef, (PathRef, (PathRef, (PathRef, (PathRef, Artifact)))))]] =
     T.traverse(transitiveTemporaryIvyModules) { p =>
       p.jar zip (p.sourceJar zip (p.docJar zip (p.pom zip (p.ivy zip p.artifactMetadata))))
     }

@@ -1,3 +1,5 @@
+// A project targeting Mill 0.10.0, testing against Mill 0.10.0 and latest 0.10.x
+
 // mill plugins under test
 import $file.plugins
 import $file.shared
@@ -23,19 +25,20 @@ trait DemoModule extends ScalaModule with PublishModule {
 // Some demo plugin
 object demoplugin extends DemoModule {
   override def compileIvyDeps = Agg(
-    ivy"com.lihaoyi::mill-main:0.7.0" // scala-steward:off
+    ivy"com.lihaoyi::mill-main:0.10.0" // scala-steward:off
   )
 }
 
 object demoutil extends DemoModule {}
 
 trait Itest extends MillIntegrationTestModule {
-  def millTestVersion = "0.7.3"
   def pluginsUnderTest = Seq(demoplugin)
-
 }
 
-object itest extends Itest {
+object itest extends Cross[ItestCross]("0.10.0", "0.10.15")
+class ItestCross(mv: String) extends Itest {
+  override def millSourcePath = super.millSourcePath / os.up
+  def millTestVersion = mv
   override def temporaryIvyModules: Seq[PublishModule] = Seq(demoutil)
   override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
     Seq(
@@ -52,4 +55,6 @@ object itest extends Itest {
 }
 
 // try to run with most defaults
-object itest2 extends Itest
+object itest2 extends Itest {
+  def millTestVersion = "0.10.15"
+}
