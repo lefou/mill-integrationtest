@@ -1,4 +1,4 @@
-// A project targeting Mill 0.11.0, testing against Mill 0.11.0 and latest 0.11.x
+// A project targeting Mill 0.11.13, testing against Mill 0.11.0 and latest 0.11.x
 
 // mill plugins under test
 import $file.plugins
@@ -46,7 +46,7 @@ trait ItestCross extends Itest with Cross.Module[String] {
         TestInvocation.Targets(Seq("-d", "fail"), 1),
         TestInvocation.Targets(Seq("checkEnv"), 1),
         TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = true),
-        TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = false),
+        TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = false)
       )
     )
   }
@@ -55,5 +55,5 @@ trait ItestCross extends Itest with Cross.Module[String] {
 
 // try to run with most defaults
 object itest2 extends Itest {
-  def millTestVersion = "0.11.0"
+  def millTestVersion = "0.11.13"
 }
