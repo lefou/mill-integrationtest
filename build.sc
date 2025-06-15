@@ -21,7 +21,7 @@ lazy val rtMillVersion = build.version()
 sealed trait CrossConfig {
   def millPlatform: String
   def minMillVersion: String
-  def scalaVersion: String = "2.13.15"
+  def scalaVersion: String = "2.13.16"
   def testWithMill: Seq[String] = Seq(minMillVersion)
   def osLibVersion: String
 }
