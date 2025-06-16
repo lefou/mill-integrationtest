@@ -151,16 +151,11 @@ trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
         TestInvocation.Targets(Seq("-d", "itest[0.11.0].test")),
         TestInvocation.Targets(Seq("-d", "itest[0.11.13].test"))
       ) ++ {
-        if (scala.util.Properties.isJavaAtLeast(11)) {
-          println(s"Including Mill 0.12 itests for JVM version $v")
-          Seq(
-            TestInvocation.Targets(Seq("-d", "itest[0.12.0].test")),
-            TestInvocation.Targets(Seq("-d", "itest[0.12.14].test"))
-          )
-        } else {
-          println("Skipping Mill 0.12 itests due to too old JVM version")
-          Seq()
-        }
+        if (scala.util.Properties.isJavaAtLeast(11)) Seq(
+          TestInvocation.Targets(Seq("-d", "itest[0.12.0].test")),
+          TestInvocation.Targets(Seq("-d", "itest[0.12.14].test"))
+        )
+        else Seq()
       } ++
         // test default target
         Seq(TestInvocation.Targets(Seq("itest2")))
