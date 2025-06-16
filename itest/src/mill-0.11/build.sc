@@ -35,7 +35,14 @@ trait Itest extends MillIntegrationTestModule {
   def pluginsUnderTest = Seq(demoplugin)
 }
 
-object itest extends Cross[ItestCross]("0.11.0", "0.11.13", "0.12.0", "0.12.14")
+val testCases =
+  Seq("0.11.0", "0.11.13") ++ (
+    // Mill 0.12 requires Java 11+
+    if (!sys.props("java.version").startsWith("8")) Seq("0.12.0", "0.12.14")
+    else Seq()
+  )
+
+object itest extends Cross[ItestCross](testCases)
 trait ItestCross extends Itest with Cross.Module[String] {
   def millTestVersion = crossValue
   override def temporaryIvyModules: Seq[PublishModule] = Seq(demoutil)
@@ -47,7 +54,7 @@ trait ItestCross extends Itest with Cross.Module[String] {
         TestInvocation.Targets(Seq("-d", "fail"), 1),
         TestInvocation.Targets(Seq("checkEnv"), 1),
         TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = true),
-        TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = false),
+        TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = false)
       )
     )
   }
