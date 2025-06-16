@@ -151,16 +151,15 @@ trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
         TestInvocation.Targets(Seq("-d", "itest[0.11.0].test")),
         TestInvocation.Targets(Seq("-d", "itest[0.11.13].test"))
       ) ++ {
-        sys.props("java.version") match {
-          case s"1.$_" | "8" | "9" | "10" =>
-            println("Skipping Mill 0.12 itests due to too old JVM version")
-            Seq()
-          case v =>
-            println(s"Including Mill 0.12 itests for JVM version $v")
-            Seq(
-              TestInvocation.Targets(Seq("-d", "itest[0.12.0].test")),
-              TestInvocation.Targets(Seq("-d", "itest[0.12.14].test"))
-            )
+        if (scala.util.Properties.isJavaAtLeast(11)) {
+          println(s"Including Mill 0.12 itests for JVM version $v")
+          Seq(
+            TestInvocation.Targets(Seq("-d", "itest[0.12.0].test")),
+            TestInvocation.Targets(Seq("-d", "itest[0.12.14].test"))
+          )
+        } else {
+          println("Skipping Mill 0.12 itests due to too old JVM version")
+          Seq()
         }
       } ++
         // test default target
@@ -173,6 +172,7 @@ trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
       case s"0.9.$_" => Seq("mill-0.9")
       case s"0.10.$_" => Seq("mill-0.10", "mill-0.9")
       case s"0.11.$_" => Seq("mill-0.11")
+      case s"0.12.$_" if !scala.util.Properties.isJavaAtLeast(11) => Seq()
       case s"0.12.$_" => Seq("mill-0.11")
     }
 
