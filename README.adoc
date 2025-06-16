@@ -1,9 +1,9 @@
 = mill-integrationtest - Integration test plugin for mill plugins
-:version: 0.7.1
+:version: 0.7.2
 :mill-platform: 0.11
 :scala-platform: 2.13
 :min-mill-version: 0.9.3
-:example-mill-version: 0.11.0
+:example-mill-version: 0.11.13
 :project-home: https://github.com/lefou/mill-integrationtest
 :scoverage-version: 1.4.11
 :munit-version: 0.7.7
@@ -450,19 +450,6 @@ This makes understanding the test setup and the build/test output rather hard to
 You can download binary releases from
 https://search.maven.org/artifact/de.tototec/de.tobiasroeser.mill.integrationtest_mill{mill-platform}_{scala-platform}[Maven Central].
 
-Newer versions of this plugin (after version 0.3.3) have a _mill platform suffix_ in the artifact name.
-If you use Mill 0.9.10 or above, you can use the double colon (`::`) between artifact name and version to always use the right Mill binary platform.
-On older Mill versions, you need to add the platform suffix manually.
-
-.Mill Platform suffix
-[options="header"]
-|===
-
-| mill version | mill platform | suffix | example
-| 0.10.x | 0.10 | `_mill0.10` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::{version}````
-| 0.9.3 - 0.9.x | 0.9 | `_mill0.9` | ```import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest_mill0.9:{version}````
-|===
-
 
 == License
 
@@ -481,6 +468,8 @@ Newer version of mill may or may not work. (Feel free to update this page via a 
 [options="header"]
 |===
 | mill-integrationtest | mill
+| 0.7.2 | 0.9.x, 0.10.x, 0.11.x
+| 0.7.1 | 0.9.x, 0.10.x, 0.11.x
 | 0.7.0 | 0.9.x, 0.10.x, 0.11.0-M8
 | 0.6.1 | 0.9.3 - 0.9.x, 0.10.x
 | 0.6.0 | 0.9.3 - 0.9.x, 0.10.x
@@ -522,6 +511,12 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 
 == Changelog
+
+=== 0.7.2 - 2025-06-16
+
+* Support test Mill 0.12 projects
+* Overhault and extended the test suite
+* Update Scala to 2.13.16
 
 === 0.7.1 - 2023-06-07
 
