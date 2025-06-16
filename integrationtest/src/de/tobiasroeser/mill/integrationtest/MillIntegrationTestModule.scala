@@ -464,9 +464,6 @@ object MillIntegrationTestModule {
       extra: Option[String] = None,
       rc: Option[Int] = None
   ) {
-    def isMilestone = milestone.isDefined
-    def isRc = rc.isDefined
-    def isSnapshot = extra.isDefined
     def versionTag =
       s"${major}.${minor}.${micro}${rc.map("-RC" + _).getOrElse("")}${milestone.map("-M" + _).getOrElse("")}"
   }
