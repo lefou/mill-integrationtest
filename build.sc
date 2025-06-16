@@ -29,7 +29,7 @@ val millApiCrossVersions = Seq(
   new CrossConfig {
     override def millPlatform = "0.11"
     override def minMillVersion: String = "0.11.0" // scala-steward:off
-    override def testWithMill: Seq[String] = Seq("0.11.13", minMillVersion)
+    override def testWithMill: Seq[String] = Seq("0.12.14", "0.11.13", minMillVersion)
     override def osLibVersion: String = "0.9.1"
   },
   new CrossConfig {
@@ -173,6 +173,7 @@ trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
       case s"0.9.$_" => Seq("mill-0.9")
       case s"0.10.$_" => Seq("mill-0.10", "mill-0.9")
       case s"0.11.$_" => Seq("mill-0.11")
+      case s"0.12.$_" => Seq("mill-0.11")
     }
 
     super.testInvocations().flatMap { ti =>
