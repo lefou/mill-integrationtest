@@ -114,7 +114,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
     //    val testInvocationsMap: Map[PathRef, TestInvocation.Targets] = testCases.toMap
     val tests = testCases.map(_._1)
 
-    log.debug(s"Running ${tests.size} integration tests")
+    log.debug(s"Running ${tests.size} integration test suite(s)")
     val results: Seq[TestCase] = tests.zipWithIndex.map {
       case (test, index) =>
         // TODO flush output streams, should we just wait a bit?
