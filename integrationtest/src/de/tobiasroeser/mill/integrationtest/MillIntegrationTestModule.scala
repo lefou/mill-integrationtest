@@ -97,16 +97,8 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
 
     val artifactMetadata = Target.sequence(pluginsUnderTest.map(_.artifactMetadata))()
 
-    val millVersion = millTestVersion()
-    println(s"Mill version: ${millVersion}")
-    val isMill_0_12_orNewer = millVersion.startsWith("0.12") ||
-      millVersion.startsWith("0.13") ||
-      !millVersion.startsWith("0.")
-
-    val coursierReposEnv =
-      if (isMill_0_12_orNewer)
-        s"env COURSIER_REPOSITORIES=ivy:${ivyPath.toNIO.toUri().toURL().toExternalForm().stripSuffix("/")}"
-      else ""
+    val millTestVersion_ = millTestVersion()
+    println(s"Mill version: ${millTestVersion_}")
 
     val importFileContents = {
       val imports = artifactMetadata.map { dep =>
@@ -122,7 +114,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
     //    val testInvocationsMap: Map[PathRef, TestInvocation.Targets] = testCases.toMap
     val tests = testCases.map(_._1)
 
-    log.debug(s"Running ${tests.size} integration tests")
+    log.debug(s"Running ${tests.size} integration test suite(s)")
     val results: Seq[TestCase] = tests.zipWithIndex.map {
       case (test, index) =>
         // TODO flush output streams, should we just wait a bit?
@@ -165,7 +157,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
               testPath / "mill",
               s"""#!/usr/bin/env sh
                  |export JAVA_OPTS="-Divy.home=${ivyPath.toIO.getAbsolutePath()}"
-                 |exec ${coursierReposEnv} ${millExe.toIO.getAbsolutePath()} "$$@"
+                 |exec ${millExe.toIO.getAbsolutePath()} "$$@"
                  |""".stripMargin,
               os.PermSet(0) +
                 PosixFilePermission.OWNER_READ +
@@ -331,11 +323,28 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
     val fullVersion = millTestVersion()
     val mainVersion = parseVersion(fullVersion).get
     val suffix = mainVersion match {
-      case MillVersion(0, 0 | 1 | 2 | 3 | 4, _, _, _) => ""
+      case MillVersion(0, 0 | 1 | 2 | 3 | 4, _, _, _, _) => ""
       case _ => "-assembly"
     }
+    val artifactSuffix = "" // always use non-native JVM runners
+    val fromMaven = mainVersion match {
+      case MillVersion(0, min, _, _, _, _) if min <= 10 => false
+      case MillVersion(0, 11, 0, Some(_), _, _) => false
+      case _ => true
+    }
+    val ext = mainVersion match {
+      case MillVersion(0, min, _, _, _, _) if min <= 11 => "jar"
+      case MillVersion(0, 12, mic, _, _, _) if mic <= 11 => "jar"
+      case _ => "exe"
+    }
     val exeSuffix = if (scala.util.Properties.isWin) ".bat" else ""
-    val url = s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.versionTag}/${fullVersion}${suffix}"
+    val url =
+      if (fromMaven) {
+        // TODO: use coursier to fetch these
+        s"https://repo1.maven.org/maven2/com/lihaoyi/mill-dist${artifactSuffix}/${fullVersion}/mill-dist${artifactSuffix}-${fullVersion}.${ext}"
+      } else {
+        s"https://github.com/lihaoyi/mill/releases/download/${mainVersion.versionTag}/${fullVersion}${suffix}"
+      }
 
     val cacheTarget = T.env
       .get("XDG_CACHE_HOME")
@@ -452,11 +461,11 @@ object MillIntegrationTestModule {
       minor: Int,
       micro: Int,
       milestone: Option[Int] = None,
-      extra: Option[String] = None
+      extra: Option[String] = None,
+      rc: Option[Int] = None
   ) {
-    def isMilestone = milestone.isDefined
-    def isSnapshot = extra.isDefined
-    def versionTag = s"${major}.${minor}.${micro}${milestone.map("-M" + _).getOrElse("")}"
+    def versionTag =
+      s"${major}.${minor}.${micro}${rc.map("-RC" + _).getOrElse("")}${milestone.map("-M" + _).getOrElse("")}"
   }
 
   /** Extract the major, minor and micro version parts of the given version string. */
@@ -465,14 +474,17 @@ object MillIntegrationTestModule {
     val vPart = parts(0).split("[.]", 4)
       .take(3)
       .map(_.toInt)
-    val (milestone, extra) = parts.drop(1) match {
-      case Array() => (None, None)
-      case Array(x) if x.startsWith("M") => (Some(x.drop(1).toInt), None)
-      case Array(x) => (None, Some(x))
-      case Array(x, y) if x.startsWith("M") => (Some(x.drop(1).toInt), Some(y))
-      case Array(x, y) => (None, Some(s"${x}-${y}"))
+    if (vPart.size > 3) throw new RuntimeException("Invalid version format. Found a third dot.")
+    val (rc, milestone, extra) = parts.drop(1) match {
+      case Array() => (None, None, None)
+      case Array(s"RC$x") => (Some(x.toInt), None, None)
+      case Array(s"M$x") => (None, Some(x.toInt), None)
+      case Array(x) => (None, None, Some(x))
+      case Array(s"RC$x", y) => (Some(x.toInt), None, Some(y))
+      case Array(s"M$x", y) => (None, Some(x.toInt), Some(y))
+      case Array(x, y) => (None, None, Some(s"${x}-${y}"))
     }
-    MillVersion(vPart(0), vPart(1), vPart(2), milestone, extra)
+    MillVersion(vPart(0), vPart(1), vPart(2), milestone, extra, rc)
   }
 
   // partial copy of os.copy version 0.7.7

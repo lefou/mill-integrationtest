@@ -35,18 +35,19 @@ trait Itest extends MillIntegrationTestModule {
   def pluginsUnderTest = Seq(demoplugin)
 }
 
-object itest extends Cross[ItestCross]("0.11.0", "0.11.13")
+object itest extends Cross[ItestCross]("0.11.0", "0.11.13", "0.12.0", "0.12.14")
 trait ItestCross extends Itest with Cross.Module[String] {
   def millTestVersion = crossValue
   override def temporaryIvyModules: Seq[PublishModule] = Seq(demoutil)
   override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
+    println("env: " + T.env)
     Seq(
       PathRef(millSourcePath / "src" / "demo") -> Seq(
         TestInvocation.Targets(Seq("verify")),
         TestInvocation.Targets(Seq("-d", "fail"), 1),
         TestInvocation.Targets(Seq("checkEnv"), 1),
         TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = true),
-        TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = false),
+        TestInvocation.Targets(Seq("checkEnv"), env = Map("TEST_ENV" -> "SET"), noServer = false)
       )
     )
   }

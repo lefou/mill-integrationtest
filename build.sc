@@ -1,6 +1,6 @@
 // mill plugins
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:`
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.7.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.7.1-35-94eeea`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1`
 
 // imports
@@ -12,7 +12,6 @@ import mill.contrib.scoverage.ScoverageModule
 import mill.define.{Command, Target, Task, TaskModule}
 import mill.scalalib._
 import mill.scalalib.publish._
-import os.Path
 import scala.util.Properties
 
 lazy val baseDir: os.Path = build.millSourcePath
@@ -146,14 +145,27 @@ trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
       // test default target
       TestInvocation.Targets(Seq("itest2"))
     ),
-    "mill-0.11" -> Seq(
-      // test with debug print and explicit test target
-      TestInvocation.Targets(Seq("-d", "itest[0.11.0].test")),
-      TestInvocation.Targets(Seq("-d", "itest[0.11.13].test")),
-      // test default target
-      TestInvocation.Targets(Seq("itest2"))
-    )
-
+    "mill-0.11" -> {
+      Seq(
+        // test with debug print and explicit test target
+        TestInvocation.Targets(Seq("-d", "itest[0.11.0].test")),
+        TestInvocation.Targets(Seq("-d", "itest[0.11.13].test"))
+      ) ++ {
+        sys.props("java.version") match {
+          case s"1.$_" | "8" | "9" | "10" =>
+            println("Skipping Mill 0.12 itests due to too old JVM version")
+            Seq()
+          case v =>
+            println(s"Including Mill 0.12 itests for JVM version $v")
+            Seq(
+              TestInvocation.Targets(Seq("-d", "itest[0.12.0].test")),
+              TestInvocation.Targets(Seq("-d", "itest[0.12.14].test"))
+            )
+        }
+      } ++
+        // test default target
+        Seq(TestInvocation.Targets(Seq("itest2")))
+    }
   )
 
   override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
