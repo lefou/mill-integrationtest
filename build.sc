@@ -1,6 +1,6 @@
 // mill plugins
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:`
-import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.7.1-35-94eeea`
+import $ivy.`de.tototec::de.tobiasroeser.mill.integrationtest::0.7.2`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1`
 
 // imports
@@ -29,7 +29,7 @@ val millApiCrossVersions = Seq(
   new CrossConfig {
     override def millPlatform = "0.11"
     override def minMillVersion: String = "0.11.0" // scala-steward:off
-    override def testWithMill: Seq[String] = Seq("0.11.13", minMillVersion)
+    override def testWithMill: Seq[String] = Seq("0.12.14", "0.12.0", "0.11.13", minMillVersion)
     override def osLibVersion: String = "0.9.1"
   },
   new CrossConfig {
@@ -151,17 +151,11 @@ trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
         TestInvocation.Targets(Seq("-d", "itest[0.11.0].test")),
         TestInvocation.Targets(Seq("-d", "itest[0.11.13].test"))
       ) ++ {
-        sys.props("java.version") match {
-          case s"1.$_" | "8" | "9" | "10" =>
-            println("Skipping Mill 0.12 itests due to too old JVM version")
-            Seq()
-          case v =>
-            println(s"Including Mill 0.12 itests for JVM version $v")
-            Seq(
-              TestInvocation.Targets(Seq("-d", "itest[0.12.0].test")),
-              TestInvocation.Targets(Seq("-d", "itest[0.12.14].test"))
-            )
-        }
+        if (scala.util.Properties.isJavaAtLeast(11)) Seq(
+          TestInvocation.Targets(Seq("-d", "itest[0.12.0].test")),
+          TestInvocation.Targets(Seq("-d", "itest[0.12.14].test"))
+        )
+        else Seq()
       } ++
         // test default target
         Seq(TestInvocation.Targets(Seq("itest2")))
@@ -173,6 +167,8 @@ trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
       case s"0.9.$_" => Seq("mill-0.9")
       case s"0.10.$_" => Seq("mill-0.10", "mill-0.9")
       case s"0.11.$_" => Seq("mill-0.11")
+      case s"0.12.$_" if !scala.util.Properties.isJavaAtLeast(11) => Seq()
+      case s"0.12.$_" => Seq("mill-0.11")
     }
 
     super.testInvocations().flatMap { ti =>

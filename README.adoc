@@ -468,7 +468,7 @@ Newer version of mill may or may not work. (Feel free to update this page via a 
 [options="header"]
 |===
 | mill-integrationtest | mill
-| 0.7.2 | 0.9.x, 0.10.x, 0.11.x
+| 0.7.2 | 0.9.x, 0.10.x, 0.11.x, 0.12.x
 | 0.7.1 | 0.9.x, 0.10.x, 0.11.x
 | 0.7.0 | 0.9.x, 0.10.x, 0.11.0-M8
 | 0.6.1 | 0.9.3 - 0.9.x, 0.10.x
@@ -515,7 +515,7 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 === 0.7.2 - 2025-06-16
 
 * Support test Mill 0.12 projects
-* Overhault and extended the test suite
+* Overhauled and extended the test suite
 * Update Scala to 2.13.16
 
 === 0.7.1 - 2023-06-07
