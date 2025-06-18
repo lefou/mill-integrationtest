@@ -1,0 +1,49 @@
+= mill-scala-steward
+:version: 0.18.0
+:toc:
+:toc-placement: preamble
+
+Mill plugin to export dependency information to be processed by https://github.com/scala-steward-org/scala-steward[Scala Steward].
+
+See https://github.com/scala-steward-org/scala-steward/issues/2704 and https://github.com/scala-steward-org/scala-steward/issues/2818 for details.
+
+== Usage
+
+This plugin is typically invoked by Scala Steward programmatically.
+
+If you want to use it manually, do as follows:
+
+[source,bash,subs="attributes,verbatim"]
+----
+$ mill --no-server --disable-ticker --import "ivy:org.scala-steward::scala-steward-mill-plugin::{version}" show org.scalasteward.mill.plugin.StewardPlugin/extractDeps
+----
+
+== Supported Mill Versions
+
+This plugin supports all Mill major versions from `0.6.x` to `0.11.x`, including minor releases.
+
+Projects using Mill milestone releases (e.g. `0.11.0-M7`) won't be supported, due to the unstable nature of the Mill API in milestone releases.
+
+If you use a Mill Snapshot release it depends. If the snapshot follows a Mill stable release (e.g. `0.11.0-6-167183`), it should typically work. If it follows a Mill milestone release (e.g. `0.11.0-M10-9-db6d7d`), it will most probably not work.
+
+Please note, that snapshot releases in general come without any compatibility guarantees.
+
+== License
+
+This project is licensed under Apache License, Version 2.0.
+
+== Changelog
+
+=== 0.18.0 - 2023-06-09
+
+* Added support for Mill `0.11`
+
+=== 0.17.1 - 2022-12-14
+
+* Take the compile-time and runtime dependencies into account
+* Also report the effective scala-library dependency 
+
+=== 0.17.0 - 2022-12-13
+
+* First release from new standalone repository https://github.com/scala-steward-org/mill-plugin
+* plugin artifacts are now properly cross-published for the following Mill binary platform versions: `0.6`, `0.7` , `0.9` and `0.10`
