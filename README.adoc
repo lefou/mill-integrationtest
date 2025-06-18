@@ -1,5 +1,5 @@
 = mill-integrationtest - Integration test plugin for mill plugins
-:version: 0.7.2
+:version: 0.7.3
 :mill-platform: 0.11
 :scala-platform: 2.13
 :min-mill-version: 0.9.3
@@ -98,6 +98,7 @@ It will `$ivy` import all dependencies you listed in `pluginsUnderTest`.
 // Import a locally published version of the plugin under test
 import $ivy.`org.example:mill-demo_2.12:0.1.0-SNAPSHOT`
 ----
+
 
 == Configuration and Targets
 
@@ -467,26 +468,27 @@ Newer version of mill may or may not work. (Feel free to update this page via a 
 .Version Compatibility Matrix
 [options="header"]
 |===
-| mill-integrationtest | mill
-| 0.7.2 | 0.9.x, 0.10.x, 0.11.x, 0.12.x
-| 0.7.1 | 0.9.x, 0.10.x, 0.11.x
-| 0.7.0 | 0.9.x, 0.10.x, 0.11.0-M8
-| 0.6.1 | 0.9.3 - 0.9.x, 0.10.x
-| 0.6.0 | 0.9.3 - 0.9.x, 0.10.x
-| 0.5.1 | 0.9.3 - 0.9.x, 0.10.x
-| 0.5.0  | 0.9.3 - 0.9.12, 0.10.0 - 0.10.1
-| 0.4.2  | 0.9.3 - 0.9.12, 0.10.0 - 0.10.1
-| 0.4.1 | 0.6.2 - 0.9.12
-| 0.4.0 | 0.6.2 - 0.9.6, (not 0.9.7), 0.9.8 - 0.9.9
-| 0.3.3 | 0.6.2 - 0.8.0
-| 0.3.2 | 0.6.2 - 0.8.0
-| 0.3.1 | 0.6.2 - 0.8.0
-| 0.3.0 | 0.6.2 - 0.8.0
-| 0.2.1 | 0.6.0 - 0.6.3
-| 0.2.0 | 0.5.7
-| 0.1.2 | 0.5.7
-| 0.1.1 | 0.5.7
-| 0.1.0 | 0.3.6 - 0.5.3
+| mill-integrationtest | Mill (plugin host)   | Mill under test
+| 0.7.3 | 0.9.3 - 0.12.x | 0.6.x - 0.12.x
+| 0.7.2 | 0.9.3 - 0.12.x | 0.8.x - 0.12.x
+| 0.7.1 | 0.9.3, 0.10.x, 0.11.x | 0.6.x - 0.12.x
+| 0.7.0 | 0.9.3, 0.10.x, 0.11.0-M8 | 0.6.x  - 0.11.x
+| 0.6.1 | 0.9.3 - 0.9.x, 0.10.x | 0.6.x  - 0.10.x
+| 0.6.0 | 0.9.3 - 0.10.x | 0.6.x  - 0.10.x
+| 0.5.1 | 0.9.3 - 0.10.x  | 0.6.x  - 0.10.x
+| 0.5.0  | 0.9.3 - 0.10.x | 0.6.x - 0.10.x
+| 0.4.2  | 0.9.3 - 0.10.x | 0.6.x - 0.10.x
+| 0.4.1 | 0.6.2 - 0.9.x | 0.6.x - 0.9.x
+| 0.4.0 | 0.6.2 - 0.9.x, (not 0.9.7) | 0.6.x - 0.9.x
+| 0.3.3 | 0.6.2 - 0.8.0 | 0.6.x - 0.8.x
+| 0.3.2 | 0.6.2 - 0.8.0 | 0.6.x - 0.8.x
+| 0.3.1 | 0.6.2 - 0.8.0 | 0.6.x - 0.8.x
+| 0.3.0 | 0.6.2 - 0.8.0 | 0.6.x - 0.8.x
+| 0.2.1 | 0.6.x | 0.6.x
+| 0.2.0 | 0.5.7 | 0.5.7
+| 0.1.2 | 0.5.7 | 0.5.7
+| 0.1.1 | 0.5.7 | 0.5.7
+| 0.1.0 | 0.3.6 - 0.5.3 | 0.3.6 - 0.5.3
 |===
 
 == About
@@ -511,6 +513,10 @@ I also accept {project-home}/pulls[pull requests on GitHub].
 
 
 == Changelog
+
+=== 0.7.3 - 2025-06-18
+
+* Fix support for tests with Mill 0.6 and Mill 0.7. This was accidentally broken by version `0.7.2`.
 
 === 0.7.2 - 2025-06-16
 
