@@ -159,14 +159,31 @@ trait ItestCross extends MillIntegrationTestModule with Cross.Module[String] {
       } ++
         // test default target
         Seq(TestInvocation.Targets(Seq("itest2")))
-    }
+    },
+    "scala-steward-mill-plugin" -> Seq(
+      TestInvocation.Targets(Seq("-d", "itest[0.6.0].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.6.3].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.7.0].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.7.4].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.8.0].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.9.3].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.9.12].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.9.12].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.10.0].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.10.15].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.11.0].test")),
+      TestInvocation.Targets(Seq("-d", "itest[0.11.7].test"))
+    )
   )
 
   override def testInvocations: Target[Seq[(PathRef, Seq[TestInvocation.Targets])]] = T {
     val whiteList = millVersion match {
       case s"0.9.$_" => Seq("mill-0.9")
       case s"0.10.$_" => Seq("mill-0.10", "mill-0.9")
-      case s"0.11.$_" => Seq("mill-0.11")
+      case s"0.11.$_" => Seq(
+//          "mill-0.11",
+          "scala-steward-mill-plugin"
+        )
       case s"0.12.$_" if !scala.util.Properties.isJavaAtLeast(11) => Seq()
       case s"0.12.$_" => Seq("mill-0.11")
     }

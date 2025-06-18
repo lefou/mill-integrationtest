@@ -110,6 +110,12 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
           |""".stripMargin
     }
 
+
+    val noServerOpt = parseVersion(millTestVersion_).get match {
+      case MillVersion(0, 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, _, _, _, _) => "--interactive"
+      case _ => "--no-server"
+    }
+
     val testCases = testInvocations()
     //    val testInvocationsMap: Map[PathRef, TestInvocation.Targets] = testCases.toMap
     val tests = testCases.map(_._1)
@@ -188,7 +194,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
                   val pathRedirect = os.PathRedirect(outlog)
 
                   val millOpts = {
-                    Option.when(noServer)("--no-server").toSeq ++
+                    Option.when(noServer)(noServerOpt).toSeq ++
                       Seq("--color", "false") ++
                       Seq("-D", s"ivy.home=${ivyPath.toIO.getAbsolutePath()}")
                   }
