@@ -34,7 +34,7 @@ jobs:
 
       - run: ./millw -i -k -d __.testCached + __.scoverage.xmlReport + __.publishLocal testRepo
         if: matrix.os != 'windows-latest'
-      - run: .\millw.bat -i -k -d __.testCached + __.scoverage.xmlReport + __.publishLocal testRepo
+      - run: .\millw.bat -i -k -d __.testCached + __.scoverage.xmlReport + __.publishLocal --localIvyRepo testRepo
         if: matrix.os == 'windows-latest'
 
       - name: Upload scoverage reports to codecov.io
