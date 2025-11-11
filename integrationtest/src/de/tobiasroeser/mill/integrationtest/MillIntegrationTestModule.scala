@@ -37,10 +37,12 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
    * Derived from [[sources]].
    */
   def testCases: T[Seq[PathRef]] = T {
+    val buildFiles = Seq("build.mill", "build.mill.scala", "build.mill.yaml", "build.sc")
     for {
-      src <- sources() if src.path.toIO.isDirectory
+      src <- sources()
+      if os.exists(src.path) && os.isDir(src.path)
       d <- os.list(src.path)
-      if (d / "build.sc").toIO.isFile
+      if buildFiles.map(d / _).exists(os.isFile)
     } yield PathRef(d)
   }
 
@@ -100,7 +102,7 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
     val millTestVersion_ = millTestVersion()
     println(s"Mill version: ${millTestVersion_}")
 
-    val importFileContents = {
+    lazy val importFileContents = {
       val imports = artifactMetadata.map { dep =>
         s"import $$ivy.`${dep.group}:${dep.id}:${dep.version}`"
       }
@@ -110,11 +112,35 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
           |""".stripMargin
     }
 
+    lazy val metaBuildContents = {
+      val mvnDeps = artifactMetadata.map { dep =>
+        s"""mvn"${dep.group}:${dep.id}:${dep.version}""""
+      }
 
-    val noServerOpt = parseVersion(millTestVersion_).get match {
+      s"""import mill._, mill.api._, mill.meta._, mill.scalalib._
+         |
+         |object `package` extends MillBuildRootModule {
+         |  def mvnDeps = Seq(
+         |    // the plugin under test
+         |    ${mvnDeps.mkString(",\n    ")}
+         |  )
+         |
+         |  def compile = {
+         |    BuildCtx.withFilesystemCheckerDisabled {
+         |      os.remove(BuildCtx.workspaceRoot / os.up / "plugins.sc")
+         |    }
+         |    super.compile()
+         |  }
+         |}
+         |""".stripMargin
+    }
+
+    val millVersion = parseVersion(millTestVersion_).get
+    val noServerOpt = millVersion match {
       case MillVersion(0, 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, _, _, _, _) => "--interactive"
       case _ => "--no-server"
     }
+    val isMill0 = millVersion.major == 0
 
     val testCases = testInvocations()
     //    val testInvocationsMap: Map[PathRef, TestInvocation.Targets] = testCases.toMap
@@ -145,8 +171,13 @@ trait MillIntegrationTestModule extends TaskModule with ExtraCoursierSupport wit
             copyWithMerge(from = src, to = testPath, createFolders = true, mergeFolders = true)
           }
 
-          // Write the plugins.sc file
-          os.write(testPath / "plugins.sc", importFileContents)
+          if (isMill0) {
+            // Write the plugins.sc file
+            os.write(testPath / "plugins.sc", importFileContents)
+          } else {
+            // Write a meta build
+            os.write(testPath / "mill-build" / "build.mill", metaBuildContents, createFolders = true)
+          }
 
           val millExe = downloadMillTestVersion().path
 
