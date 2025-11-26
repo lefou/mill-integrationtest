@@ -17,7 +17,7 @@ import de.tobiasroeser.mill.integrationtest._
 trait PlatformConfig {
   def millVersion: String
   def millPlatform: String
-  def scalaVersion: String = "2.13.16"
+  def scalaVersion: String = "2.13.18"
   def testWith: Seq[String]
 
   def millScalalib = ivy"com.lihaoyi::mill-scalalib:${millVersion}"
