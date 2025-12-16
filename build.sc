@@ -47,7 +47,7 @@ val millApiCrossVersions = Seq(
 )
 
 object Deps {
-  val scoverageVersion = "2.3.0"
+  val scoverageVersion = "2.5.2"
   val scoveragePlugin = ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion}"
   val scoverageRuntime = ivy"org.scoverage::scalac-scoverage-runtime:${scoverageVersion}"
 }
