@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        java-version: [8, 11, 17]
+        java-version: [11, 17]
     runs-on: ${{ matrix.os }}
     # continue-on-error: ${{ matrix.os == 'windows-latest' }}
 
@@ -32,9 +32,9 @@ jobs:
           java-version: ${{ matrix.java-version }}
           distribution: temurin
 
-      - run: ./millw -i -k -d __.testCached + __.scoverage.xmlReport + __.publishLocal testRepo
+      - run: ./millw -i -k -d -j 0 __.testCached + __.scoverage.xmlReport + __.publishLocal  --localIvyRepo testRepo
         if: matrix.os != 'windows-latest'
-      - run: .\millw.bat -i -k -d __.testCached + __.scoverage.xmlReport + __.publishLocal --localIvyRepo testRepo
+      - run: .\millw.bat -i -k -d -j 0 __.testCached + __.scoverage.xmlReport + __.publishLocal --localIvyRepo testRepo
         if: matrix.os == 'windows-latest'
 
       - name: Upload scoverage reports to codecov.io
@@ -66,7 +66,7 @@ jobs:
           gpg --list-secret-keys --keyid-format LONG
 
       - name: Publish to Maven Central
-        run: MILL_VERSION="0.12.14" ./millw -i --import "ivy:com.lihaoyi::mill-contrib-sonatypecentral:" mill.contrib.sonatypecentral.SonatypeCentralPublishModule/publishAll --publishArtifacts __.publishArtifacts
+        run: ./millw -i --import "ivy:com.lihaoyi::mill-contrib-sonatypecentral:" mill.contrib.sonatypecentral.SonatypeCentralPublishModule/publishAll --publishArtifacts __.publishArtifacts
         env:
           MILL_PGP_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASS }}
           # MILL_PGP_SECRET_BASE64: ${{ secrets.GPG_SECRET_KEY }}
